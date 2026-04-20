@@ -1,0 +1,76 @@
+﻿using UnityEngine;
+using UnityEngine.EventSystems;
+
+public class VariableJoystick : Joystick
+{
+    public float MoveThreshold { 
+        get => moveThreshold;
+        set => moveThreshold = Mathf.Abs(value);
+    }
+
+    [SerializeField] private float moveThreshold = 1;
+    [SerializeField] private JoystickType joystickType = JoystickType.Fixed;
+
+    private Vector2 fixedPosition = Vector2.zero;
+
+    public void SetMode(JoystickType joystickType_)
+    {
+        joystickType = joystickType_;
+        if(joystickType_ == JoystickType.Fixed)
+        {
+            background.anchoredPosition = fixedPosition;
+            background.gameObject.SetActive(true);
+        }
+        else
+            background.gameObject.SetActive(false);
+    }
+
+    protected override void Start()
+    {
+        base.Start();
+        fixedPosition = background.anchoredPosition;
+        SetMode(joystickType);
+    }
+
+    public override void OnPointerDown(PointerEventData eventData)
+    {
+        if(joystickType != JoystickType.Fixed)
+        {
+            // 先初始化相机，确保 ScreenPointToAnchoredPosition 能正确计算位置
+            InitializeCamera();
+            background.anchoredPosition = ScreenPointToAnchoredPosition(eventData.position);
+            background.gameObject.SetActive(true);
+        }
+        base.OnPointerDown(eventData);
+    }
+
+    public override void OnPointerUp(PointerEventData eventData)
+    {
+        if(joystickType != JoystickType.Fixed)
+            background.gameObject.SetActive(false);
+
+        base.OnPointerUp(eventData);
+    }
+
+    public override void Reset()
+    {
+        base.Reset();
+        // 根据摇杆类型决定是否隐藏背景，与 OnPointerUp 行为一致
+        if (background != null && joystickType != JoystickType.Fixed)
+        {
+            background.gameObject.SetActive(false);
+        }
+    }
+
+    protected override void HandleInput(float magnitude, Vector2 normalised, Vector2 radius, Camera cam)
+    {
+        if (joystickType == JoystickType.Dynamic && magnitude > moveThreshold)
+        {
+            Vector2 difference = normalised * (magnitude - moveThreshold) * radius;
+            background.anchoredPosition += difference;
+        }
+        base.HandleInput(magnitude, normalised, radius, cam);
+    }
+}
+
+public enum JoystickType { Fixed, Floating, Dynamic }
