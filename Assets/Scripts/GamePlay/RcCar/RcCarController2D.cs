@@ -1,80 +1,115 @@
 using UnityEngine;
 
+// -----------------------------------------------------------------------------
+// 2D 俯视遥控车（车头 = transform.up）
+// · 读入：RcCarInputSystemPlayer（Move.x / Sprint / Reverse）+ 可选 UI Joystick.Horizontal
+// · 速度：在车身坐标系 (前进, 侧向) 里做指数衰减，再叠加油门力与限速
+// · 转向：直接写 Rigidbody2D.angularVelocity，单位「度/秒」（与 Unity API 一致）
+// · 侧向：lateralRate 越大 → exp(-rate·dt) 越小 → 横速衰减越快 = 越抓地；直线用大 rate、弯里随舵角降到小 rate
+// · 松手：舵角用 steerAngleReleaseSpeedDeg 快回中；转弯/侧滑用 min(平滑舵, 输入)，输入为 0 时立刻按直行算，避免松手还甩
+// · 惯性：纵向靠 forwardDrag / coastExtraDrag × longitudinalDragScale；系数越小滑得越远。还可提高 Rigidbody.mass 并同比加大 accelerationForce 让加减速更「沉」
+// -----------------------------------------------------------------------------
+
 /// <summary>
-/// 2D 俯视角遥控车：车头 <see cref="transform.up"/>。
-/// Sprint=油门，Reverse=倒车；左右输入为<b>相对车身</b>的「方向盘角」指令（非世界绝对朝向）。
-/// 转弯角速度随<b>车速</b>升高，近似 RC：静止时轮子可打角但车身几乎不绕圈自转；纵/侧速度分别衰减产生侧滑。
+/// 2D 俯视遥控车：车头 <see cref="transform.up"/>，侧向 <see cref="transform.right"/>。
+/// 油门 Sprint/Reverse；转向 = Move.x + UI 摇杆 Horizontal。
+/// <b>侧向抓地随舵角变化</b>：不转向时高抓地（稳）；舵越大侧向衰减越弱，弯里略带漂移感。
+/// 角速度为街机式（度/秒）；线速度低于阈值时打舵不甩车身。松手后输入为 0 时物理舵幅立即归零，并加快回中与角速度收敛。
 /// </summary>
 [RequireComponent(typeof(Rigidbody2D))]
 [DisallowMultipleComponent]
 public class RcCarController2D : MonoBehaviour
 {
     [Header("References")]
-    [Tooltip("本物体 Rigidbody2D；未指定则 Reset/Awake 自动获取")]
+    [Tooltip("本物体上的 Rigidbody2D；可留空由 Reset/Awake 自动拉取")]
     [SerializeField] Rigidbody2D rb;
 
-    [Header("Drive")]
-    [Tooltip("油门 ±1 时沿车头的推力")]
+    [Header("Drive · 沿车头加减速")]
+    [Tooltip("油门为 ±1 时沿车头施加的力（世界单位下需结合质量调节体感）")]
     [SerializeField] float accelerationForce = 38f;
-    [Tooltip("前进沿车头最大速度")]
+    [Tooltip("前进方向沿车头最大线速度（世界单位/秒）")]
     [SerializeField] float maxForwardSpeed = 9f;
-    [Tooltip("倒车沿车头最大速度")]
+    [Tooltip("倒车方向沿车头最大线速度（取正值，表示限速幅度）")]
     [SerializeField] float maxReverseSpeed = 4f;
-    [Tooltip("倒车推力相对前进的倍率")]
+    [Tooltip("倒车时 accelerationForce 乘的倍率（一般小于 1）")]
     [SerializeField] float reverseAccelerationMultiplier = 0.55f;
 
-    [Header("Steer（相对车身的方向盘角 → 角速度）")]
-    [Tooltip("左右输入每秒向目标方向盘角靠近的幅度（-1～1 量纲）")]
-    [SerializeField] float steerWheelFollowSpeed = 4f;
-    [Tooltip("纯靠车速时，线速度到多少转弯接近满；宜偏小，否则低速几乎转不动")]
-    [SerializeField] float steerSpeedForFullTurn = 0.9f;
-    [Tooltip("有油门时额外增加转弯权（0～1），解决低速/刚起步转不动")]
-    [SerializeField] float steerThrottleAssist = 0.38f;
-    [Tooltip("打舵时微量低速转弯权，避免完全死转；不宜过大以免原地陀螺")]
-    [SerializeField] float steerWheelLowSpeedAssist = 0.1f;
-    [Tooltip("满舵时最大转弯角速度（度/秒）")]
-    [SerializeField] float maxYawRateDeg = 200f;
-    [Tooltip("当前角速度向目标角速度靠近的快慢，越大越跟手")]
-    [SerializeField] float steerOmegaGain = 14f;
+    [Header("Steer · 街机式（angularVelocity = 度/秒）")]
+    [Tooltip("横向输入打满 [-1,1] 映射到的舵角幅度（度）；同时供 UI 轮胎旋转")]
+    [SerializeField] float maxSteerAngleDeg = 180f;
+    [Tooltip("打舵时舵角向目标靠近的变化率（度/秒）")]
+    [SerializeField] float steerAngleFollowSpeedDeg = 480f;
+    [Tooltip("松手回中时舵角向 0 靠近的变化率（宜远大于上面，否则松手还会按大舵转一会儿、侧滑也收不住）")]
+    [SerializeField] float steerAngleReleaseSpeedDeg = 1100f;
+    [Tooltip("横向打满时节流的角速度上限（度/秒），与 Rigidbody2D.angularVelocity 单位一致")]
+    [SerializeField] float maxYawRateDeg = 180f;
+    [Tooltip("车体线速度（纵或合速度）低于该值时不产生转弯角速度，避免静止打舵陀螺")]
+    [SerializeField] float minLinearSpeedToSteer = 0.35f;
+    [Tooltip("参考速度：用于把当前车速归一成转弯权 0~1，越大要跑得越快才「满舵」弯")]
+    [SerializeField] float steerSpeedForFullTurn = 2f;
+    [Tooltip("在已过最低速度门槛后，油门对折向权重的额外贡献")]
+    [SerializeField] float steerThrottleTurnWeight = 0.35f;
+    [Tooltip("有转向输入时，角速度向目标逼近的快慢（exp(-steerOmegaGain·dt)）")]
+    [SerializeField] float steerOmegaGain = 12f;
+    [Tooltip("横向输入已回中（视为松手）时，额外把角速度往目标拉的强度，越大松手越-stop 转")]
+    [SerializeField] float steerReleaseYawGain = 26f;
 
-    [Header("Slip")]
-    [Tooltip("侧向速度每帧 exp(-本值*dt)")]
-    [SerializeField] float lateralGrip = 4.2f;
-    [Tooltip("纵向速度每帧 exp(-本值*dt)")]
-    [SerializeField] float forwardDrag = 2.8f;
-    [Tooltip("无油门时额外纵向衰减（越小惯性滑行越久）")]
-    [SerializeField] float coastExtraDrag = 0.55f;
+    [Header("Slip · 直稳弯漂（lateralRate 大 = 横速衰得快 = 抓地牢）")]
+    [Tooltip("几乎不转向时的侧向衰减系数；宜大，直线稳")]
+    [SerializeField] float lateralGripStraight = 14f;
+    [Tooltip("舵接近打满时的侧向衰减系数；宜明显小于 Straight，弯里才容易存横滑")]
+    [SerializeField] float lateralGripTurning = 5f;
+    [Tooltip("在 Straight~Turning 间按 |舵| 的该次方插值；>1 则小舵仍偏直、大舵才明显滑")]
+    [SerializeField] float lateralSteerSlipPower = 1.4f;
+    [Tooltip("带油门且正在转向时，额外削弱侧向衰减（略增甩尾）；0 关闭")]
+    [SerializeField] float lateralThrottleDrift = 2.2f;
+    [Tooltip("纵轴 v∥ 每帧 exp(-forwardDrag·dt)；略小则松油门后少拖长滑行")]
+    [SerializeField] float forwardDrag = 2.3f;
+    [Tooltip("无油门时纵轴再乘 exp(-coastExtraDrag·dt)")]
+    [SerializeField] float coastExtraDrag = 0.38f;
+
+    [Header("Inertia · 纵向滑行")]
+    [Tooltip("乘在 forwardDrag 与 coastExtraDrag 上：<1 纵向衰减慢、松油后更耐滑；>1 更快停。不改侧向抓地")]
+    [SerializeField] [Range(0.25f, 1.35f)] float longitudinalDragScale = 0.82f;
 
     [Header("Brake")]
-    [Tooltip("油门与沿车头速度反向时的额外制动力")]
+    [Tooltip("油门与当前沿车头速度方向相反时的附加制动力")]
     [SerializeField] float brakeForce = 50f;
 
     [Header("Rigidbody")]
-    [Tooltip("高速建议 Continuous")]
+    [Tooltip("高速易穿模时可开 Continuous")]
     [SerializeField] bool continuousCollision = true;
-    [Tooltip("俯视角一般为 0")]
+    [Tooltip("2D 俯视一般为 0")]
     [SerializeField] float defaultGravityScale = 0f;
+    [Tooltip("刚体线性阻尼；本脚本主要手写速度衰减，此项常为 0")]
     [SerializeField] float rigidbodyLinearDrag = 0f;
-    [Tooltip("每帧会削弱角速度；本脚本会主动设角速度，过大易导致「转不动」，建议 0～0.3")]
-    [SerializeField] float rigidbodyAngularDrag = 0.15f;
+    [Tooltip("刚体角阻尼；过大会抵消脚本设置的角速度")]
+    [SerializeField] float rigidbodyAngularDrag = 0.2f;
 
     [Header("Input")]
+    [Tooltip("绑定 Input Actions 里 Player 的 Move / Sprint / Reverse")]
     [SerializeField] RcCarInputSystemPlayer inputPlayer;
-    [Tooltip("仅左右=方向盘；纵轴不用")]
+    [Tooltip("Joystick Pack 屏幕摇杆；Horizontal 并进横向")]
     [SerializeField] Joystick uiJoystick;
-    [Tooltip("关则只用 UI 摇杆，不读实体 Move")]
+    [Tooltip("关闭则不读 Move（键盘 A/D 等）；纯触屏可关、只用手柄摇杆")]
     [SerializeField] bool includePhysicalMoveInput = true;
+    [Tooltip("横向输入绝对值小于此当作 0")]
     [SerializeField] float inputDeadZone = 0.08f;
 
     [Header("Debug")]
-    [Tooltip("油门(Sprint)按下/松开时打日志")]
+    [Tooltip("Sprint 边沿打 LogClass")]
     [SerializeField] bool logThrottleToConsole;
+    [Tooltip("每 FixedUpdate 打 steer 与舵角")]
+    [SerializeField] bool logSteerToConsole;
+
+    /// <summary>当前平滑后的舵角（度），相对车身；前轮胎体可跟转。</summary>
+    public float CurrentSteerAngleDeg => _steerAngleDeg;
+
+    /// <summary>平滑后的目标舵角（度），由横向输入驱动。</summary>
+    float _steerAngleDeg;
+
+    /// <summary>用于油门日志边沿检测。</summary>
     bool _loggedSprintPrev;
-
-    /// <summary>相对车身的方向盘角 -1～1，由左右输入平滑得到。</summary>
-    float _steerWheel;
-
-    float MaxYawRateRad => maxYawRateDeg * Mathf.Deg2Rad;
 
     void Reset()
     {
@@ -97,52 +132,60 @@ public class RcCarController2D : MonoBehaviour
             ? CollisionDetectionMode2D.Continuous
             : CollisionDetectionMode2D.Discrete;
         rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        // 确保场景里若曾勾选 Freeze Rotation Z，此处仍会允许转弯
         rb.constraints = RigidbodyConstraints2D.None;
 
         if (inputPlayer != null)
             _loggedSprintPrev = inputPlayer.ReadSprint();
     }
 
+    /// <summary>每物理步：汇总输入 → 更新舵角 → 跑一圈车体力学。</summary>
     void FixedUpdate()
     {
-        Vector2 move = Vector2.zero;
+        // --- 横向 [-1,1]：新 Input System 的 Move.x + UI 摇杆 ---
+        float steerX = 0f;
         if (includePhysicalMoveInput && inputPlayer != null)
-        {
-            Vector2 m = inputPlayer.ReadMove();
-            move.x = m.x;
-        }
+            steerX += inputPlayer.ReadMove().x;
+        if (uiJoystick != null)
+            steerX += uiJoystick.Horizontal;
 
-        if (uiJoystick != null && uiJoystick.Direction.sqrMagnitude > 0.0001f)
-            move.x += uiJoystick.Direction.x;
+        steerX = Mathf.Clamp(steerX, -1f, 1f);
+        if (Mathf.Abs(steerX) < inputDeadZone)
+            steerX = 0f;
 
-        float steerInput = Mathf.Clamp(move.x, -1f, 1f);
-        if (Mathf.Abs(steerInput) < inputDeadZone)
-            steerInput = 0f;
-
+        // --- 油门：Sprint / Reverse 互斥；同按或都不按为 0 ---
         bool sprint = inputPlayer != null && inputPlayer.ReadSprint();
         bool rev = inputPlayer != null && inputPlayer.ReadReverse();
-
-        float throttle;
+        float throttle = 0f;
         if (sprint && !rev)
             throttle = 1f;
         else if (rev && !sprint)
             throttle = -1f;
-        else
-            throttle = 0f;
+
 
         if (logThrottleToConsole && sprint != _loggedSprintPrev)
         {
-            Debug.Log($"[RcCar] 油门(Sprint)={(sprint ? "ON" : "OFF")} throttle={throttle:F2}", this);
+            LogClass.LogImport(GameLogCategory.RcCar, $"Sprint={(sprint ? 1 : 0)} throttle={throttle:F0}");
             _loggedSprintPrev = sprint;
         }
 
         float dt = Time.fixedDeltaTime;
-        _steerWheel = Mathf.MoveTowards(_steerWheel, steerInput, steerWheelFollowSpeed * dt);
+        float targetSteerDeg = steerX * maxSteerAngleDeg;
+        // 松手回中用更快回中，避免 _steerAngleDeg 滞后导致仍按大舵转弯/漂移
+        float steerFollow = Mathf.Abs(steerX) < 0.001f ? steerAngleReleaseSpeedDeg : steerAngleFollowSpeedDeg;
+        _steerAngleDeg = Mathf.MoveTowards(_steerAngleDeg, targetSteerDeg, steerFollow * dt);
 
-        RunPhysics(throttle, maxForwardSpeed, dt);
+        if (logSteerToConsole)
+            LogClass.LogImport(GameLogCategory.RcCar, $"steer={steerX:F2} deg={_steerAngleDeg:F0}");
+
+        RunPhysics(throttle, maxForwardSpeed, dt, steerX);
     }
 
-    void RunPhysics(float throttle, float forwardSpeedCap, float dt)
+    /// <summary>
+    /// 先限速，再在车身系里对速度做指数衰减、施力，最后按舵角与车速写角速度。
+    /// <paramref name="steerInput"/>：经死区后的横向输入；转弯/抓地用 min(平滑舵, 输入)，松手为 0 即不再按弯里算。
+    /// </summary>
+    void RunPhysics(float throttle, float forwardSpeedCap, float dt, float steerInput)
     {
         ClampSpeedAlongForward(forwardSpeedCap);
 
@@ -150,13 +193,27 @@ public class RcCarController2D : MonoBehaviour
         Vector2 right = transform.right;
 
         Vector2 v = rb.linearVelocity;
+        // 世界速度投到当前车头的前/右轴
         float forwardVel = Vector2.Dot(v, forward);
         float lateralVel = Vector2.Dot(v, right);
 
-        float lateralFactor = Mathf.Exp(-lateralGrip * dt);
-        float forwardFactor = Mathf.Exp(-forwardDrag * dt);
+        // --- 侧向抓地：物理舵幅 = min(|平滑舵|, |输入|)。松手输入=0 → 立刻按直路抓地，不收滑到撞墙 ---
+        float steerNormPhysics = SteerNormForPhysics(steerInput);
+        float steerAbsForGrip = Mathf.Abs(steerNormPhysics);
+        float slipBlend = Mathf.Pow(steerAbsForGrip, lateralSteerSlipPower);
+        float lateralRate = Mathf.Lerp(lateralGripStraight, lateralGripTurning, slipBlend);
+        if (Mathf.Abs(throttle) > 0.01f && steerAbsForGrip > 0.08f)
+            lateralRate -= lateralThrottleDrift * steerAbsForGrip * Mathf.Abs(throttle);
+        // 防止 rate 过低导致数值过于「滑冰」或不稳定
+        lateralRate = Mathf.Max(2.5f, lateralRate);
+
+        // v 分量每步乘 exp(-rate·dt)，等效连续阻尼；纵向再乘 longitudinalDragScale 调「惯性滑行」
+        float lateralFactor = Mathf.Exp(-lateralRate * dt);
+        float fwdD = forwardDrag * longitudinalDragScale;
+        float coastD = coastExtraDrag * longitudinalDragScale;
+        float forwardFactor = Mathf.Exp(-fwdD * dt);
         if (Mathf.Abs(throttle) < 0.01f)
-            forwardFactor *= Mathf.Exp(-coastExtraDrag * dt);
+            forwardFactor *= Mathf.Exp(-coastD * dt);
 
         lateralVel *= lateralFactor;
         forwardVel *= forwardFactor;
@@ -167,6 +224,7 @@ public class RcCarController2D : MonoBehaviour
         float accelMul = throttle >= 0f ? 1f : reverseAccelerationMultiplier;
         rb.AddForce(forward * (throttle * accelerationForce * accelMul));
 
+        // 油门与当前车头速度反向：额外刹车感
         if (Mathf.Abs(throttle) > 0.01f)
         {
             float oppose = Mathf.Sign(throttle) * Mathf.Sign(forwardAfterDamp);
@@ -174,19 +232,44 @@ public class RcCarController2D : MonoBehaviour
                 rb.AddForce(-Mathf.Sign(forwardAfterDamp) * forward * brakeForce);
         }
 
-        // 舵角 → 目标角速度：随车速升高（防原地陀螺），并用油门/微量舵角补低速，避免「完全转不动」
-        float speed = rb.linearVelocity.magnitude;
-        float turnFactor = Mathf.Clamp01(speed / Mathf.Max(0.01f, steerSpeedForFullTurn));
-        turnFactor += Mathf.Abs(throttle) * steerThrottleAssist;
-        turnFactor += Mathf.Abs(_steerWheel) * steerWheelLowSpeedAssist;
-        turnFactor = Mathf.Clamp01(turnFactor);
+        // --- 转向：同样用 steerNormPhysics，松手不再持续施加弯心角速度 ---
+        float steerNorm = steerNormPhysics;
+        float speedMag = rb.linearVelocity.magnitude;
+        float along = Mathf.Abs(forwardAfterDamp);
+        float vMeasure = Mathf.Max(along, speedMag);
 
-        float desiredOmega = -_steerWheel * MaxYawRateRad * turnFactor;
+        float turnFactor = 0f;
+        if (vMeasure >= minLinearSpeedToSteer)
+        {
+            turnFactor = Mathf.Clamp01(vMeasure / Mathf.Max(0.01f, steerSpeedForFullTurn));
+            turnFactor += steerThrottleTurnWeight * Mathf.Abs(throttle);
+            turnFactor = Mathf.Clamp01(turnFactor);
+        }
+
+        float desiredYawDegPerSec = -steerNorm * maxYawRateDeg * turnFactor;
         float t = Mathf.Clamp01(1f - Mathf.Exp(-steerOmegaGain * dt));
-        float omega = Mathf.Lerp(rb.angularVelocity, desiredOmega, t);
-        rb.angularVelocity = Mathf.Clamp(omega, -MaxYawRateRad, MaxYawRateRad);
+        // 松手：更强地把角速度拉向目标（多为 0），减少残余旋转
+        if (Mathf.Abs(steerInput) < inputDeadZone)
+            t = Mathf.Max(t, Mathf.Clamp01(1f - Mathf.Exp(-steerReleaseYawGain * dt)));
+        float yaw = Mathf.Lerp(rb.angularVelocity, desiredYawDegPerSec, t);
+        rb.angularVelocity = Mathf.Clamp(yaw, -maxYawRateDeg, maxYawRateDeg);
     }
 
+    /// <summary>
+    /// 平滑舵与实际输入同时参与：幅值取 min(|平滑|, |输入|)；有输入时方向跟输入，松手后输入为 0 → 立刻为 0。
+    /// </summary>
+    float SteerNormForPhysics(float steerInput)
+    {
+        float sm = Mathf.Clamp(_steerAngleDeg / Mathf.Max(1f, maxSteerAngleDeg), -1f, 1f);
+        float inp = Mathf.Clamp(steerInput, -1f, 1f);
+        float mag = Mathf.Min(Mathf.Abs(sm), Mathf.Abs(inp));
+        if (mag < 1e-5f)
+            return 0f;
+        float sign = Mathf.Abs(inp) > 1e-5f ? Mathf.Sign(inp) : Mathf.Sign(sm);
+        return sign * mag;
+    }
+
+    /// <summary>沿车头方向的分速度不应超过前进/倒车各自上限。</summary>
     void ClampSpeedAlongForward(float forwardSpeedCap)
     {
         Vector2 v = rb.linearVelocity;

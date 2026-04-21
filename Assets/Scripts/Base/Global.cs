@@ -20,6 +20,7 @@ public static class GameLogCategory
     public const string UIManager = "UIManger";
     public const string SceneStateController = "SceneStateController";
     public const string System = "System";
+    public const string RcCar = "RcCar";
 }
 
 public static class LogClass
