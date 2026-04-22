@@ -14,7 +14,7 @@ public class RcCarRacePauseMenu2D : MonoBehaviour
 
     RcCarRaceGameMode _mode;
     bool _bound;
-
+    
     public void Bind(RcCarRaceGameMode mode)
     {
         if (_bound || mode == null)

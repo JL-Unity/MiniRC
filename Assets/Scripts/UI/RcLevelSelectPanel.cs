@@ -7,6 +7,7 @@ using UnityEngine.UI;
 /// </summary>
 public class RcLevelSelectPanel : BasePanel
 {
+    [Header("关卡目录")]
     [SerializeField] RcTrackCatalog catalog;
 
     [Tooltip("与 PoolManager/UIManager 一致的 prefab 资源名（通常在 Resources 下）")]
@@ -18,9 +19,11 @@ public class RcLevelSelectPanel : BasePanel
     [Tooltip("可选：与 levelButtons 同序，用于显示关卡名")]
     [SerializeField] Text[] levelLabels;
 
+    [SerializeField] Button backButton;
+
     public override void OnEnter()
     {
-        BindLevelButtonsIfNeeded();
+        BindButtonsIfNeeded();
         RefreshLabels();
     }
 
@@ -30,11 +33,21 @@ public class RcLevelSelectPanel : BasePanel
 
     public override void OnExit() { }
 
+    void OnBackClicked()
+    {
+        UIManager.GetInstance().PopPanel();
+    }
+
     void BindLevelButtonsIfNeeded()
     {
         if (catalog == null || catalog.tracks == null || levelButtons == null)
         {
             return;
+        }
+        if (backButton != null) 
+        {
+            backButton.onClick.RemoveAllListeners();
+            backButton.onClick.AddListener(OnBackClicked);
         }
 
         for (int i = 0; i < levelButtons.Length; i++)

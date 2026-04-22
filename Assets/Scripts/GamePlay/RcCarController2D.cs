@@ -74,6 +74,12 @@ public class RcCarController2D : MonoBehaviour
     [Tooltip("乘在 forwardDrag 与 coastExtraDrag 上：<1 纵向衰减慢、松油后更耐滑；>1 更快停。不改侧向抓地")]
     [SerializeField] [Range(0.25f, 1.35f)] float longitudinalDragScale = 0.82f;
 
+    [Header("Collision · 贴墙补丁（抑制撞墙后沿墙滑）")]
+    [Tooltip("OnCollisionStay 刷新后保持多少秒「贴墙态」；过期自动失效，无需依赖 Exit 事件配对")]
+    [SerializeField] float wallContactWindow = 0.05f;
+    [Tooltip("贴墙期间 lateralRate 的下限；≤0 关闭此补丁；默认 ≈ lateralGripStraight，可略高以更快消滑")]
+    [SerializeField] float wallContactLateralGripFloor = 14f;
+
     [Header("Brake")]
     [Tooltip("油门与当前沿车头速度方向相反时的附加制动力")]
     [SerializeField] float brakeForce = 50f;
@@ -103,6 +109,9 @@ public class RcCarController2D : MonoBehaviour
 
     /// <summary>平滑后的目标舵角（度），由横向输入驱动。</summary>
     float _steerAngleDeg;
+
+    // OnCollisionStay2D 在 FixedUpdate 之后由物理系统触发，所以这里存的是「上一个物理步的接触状态」，>0 视为贴墙中
+    float _wallContactTimer;
 
     void Reset()
     {
@@ -134,6 +143,9 @@ public class RcCarController2D : MonoBehaviour
         // 确保场景里若曾勾选 Freeze Rotation Z，此处仍会允许转弯
         rb.constraints = RigidbodyConstraints2D.None;
     }
+
+    /// <summary>任何 2D 碰撞体只要持续接触，每物理步都会触发一次；用来刷新「贴墙中」定时器。</summary>
+    void OnCollisionStay2D(Collision2D _) => _wallContactTimer = wallContactWindow;
 
     /// <summary>每物理步：汇总输入 → 更新舵角 → 跑一圈车体力学。</summary>
     void FixedUpdate()
@@ -169,6 +181,7 @@ public class RcCarController2D : MonoBehaviour
         }
 
         float dt = Time.fixedDeltaTime;
+        _wallContactTimer = Mathf.Max(0f, _wallContactTimer - dt);
         float targetSteerDeg = steerX * maxSteerAngleDeg;
         // 松手回中用更快回中，避免 _steerAngleDeg 滞后导致仍按大舵转弯/漂移
         float steerFollow = Mathf.Abs(steerX) < 0.001f ? steerAngleReleaseSpeedDeg : steerAngleFollowSpeedDeg;
@@ -204,6 +217,13 @@ public class RcCarController2D : MonoBehaviour
         }
         // 防止 rate 过低导致数值过于「滑冰」或不稳定
         lateralRate = Mathf.Max(2.5f, lateralRate);
+
+        // 贴墙补丁：碰撞会把原本的纵向动能经 Dot 分解到 lateralVel（斜贴墙），弯道低抓地档会让这份「被动横速」
+        // 衰得很慢 → 沿墙滑一大截。此处把 lateralRate 抬到 straight 档，快速吃掉这部分横速。
+        if (_wallContactTimer > 0f && wallContactLateralGripFloor > 0f)
+        {
+            lateralRate = Mathf.Max(lateralRate, wallContactLateralGripFloor);
+        }
 
         // v 分量每步乘 exp(-rate·dt)，等效连续阻尼；纵向再乘 longitudinalDragScale 调「惯性滑行」
         float lateralFactor = Mathf.Exp(-lateralRate * dt);
