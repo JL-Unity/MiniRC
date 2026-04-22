@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,8 +12,29 @@ public class GameManager : MonoBehaviour
 
     [SerializeField] [Tooltip("可选：主 UI Canvas；不填则 UIManager 内 Find(\"Canvas\")")]
     private Transform uiCanvasRoot;
-    
-    // Start is called before the first frame update
+
+    [SerializeField] [Tooltip("菜单未写入关卡 id 时的默认 PendingLevelId")]
+    string defaultLevelId = "default";
+
+    /// <summary>菜单 <see cref="SetPendingRaceIntent"/> 写入；Race 场景内消费。</summary>
+    string _pendingLevelId;
+    int _pendingCarIndex;
+
+    /// <summary>Race 关卡 id（菜单意图；未设置时用 defaultLevelId）。</summary>
+    public string PendingLevelId =>
+        string.IsNullOrEmpty(_pendingLevelId) ? defaultLevelId : _pendingLevelId;
+
+    /// <summary>在 <see cref="RcCarRoster"/> 中的下标。</summary>
+    public int PendingCarIndex => _pendingCarIndex;
+
+    /// <summary>菜单选关/选车后调用，再 <see cref="SceneStateController.StartLoadingScene"/> 进入 Race。</summary>
+    public void SetPendingRaceIntent(string levelId, int carIndex)
+    {
+        if (!string.IsNullOrEmpty(levelId))
+            _pendingLevelId = levelId;
+        _pendingCarIndex = Mathf.Max(0, carIndex);
+    }
+
     private void Awake()
     {
         Application.targetFrameRate = 120;
@@ -31,7 +52,6 @@ public class GameManager : MonoBehaviour
 
     void Init()
     {
-        //SaveManager.GetInstance().Init();
         PoolManager.GetInstance().Init();
         UIManager ui = UIManager.GetInstance();
         ui.SetCanvasRoot(uiCanvasRoot);
@@ -44,7 +64,7 @@ public class GameManager : MonoBehaviour
     {
         return currentGameMode;
     }
-    // Update is called once per frame
+
     void Update()
     {
         if (isGameStop)
@@ -60,7 +80,7 @@ public class GameManager : MonoBehaviour
         EventCenter.GetInstance().Publish(default(GameModeSetMessage));
         LogClass.LogGame(GameLogCategory.System, "GameModeSetEvent posted");
     }
-    
+
     public void Clear()
     {
         Debug.Log("【GameManager】Clear");
@@ -70,5 +90,4 @@ public class GameManager : MonoBehaviour
         SkillManager.GetInstance().Clear();
         TimerManager.GetInstance().Clear();
     }
-    
 }

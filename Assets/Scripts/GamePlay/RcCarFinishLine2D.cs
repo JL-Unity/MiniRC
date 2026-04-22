@@ -13,6 +13,13 @@ public class RcCarFinishLine2D : MonoBehaviour
 
     Collider2D _col;
 
+    /// <summary>关卡加载后对 Session 与车辆根赋值（预制体上 session/carRoot 可先留空）。</summary>
+    public void BindSessionAndCar(RcCarRaceSession2D s, Transform vehicleRoot)
+    {
+        session = s;
+        carRoot = vehicleRoot;
+    }
+
     void Awake()
     {
         _col = GetComponent<Collider2D>();

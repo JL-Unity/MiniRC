@@ -51,6 +51,10 @@ public class RcCarRaceSession2D : MonoBehaviour
     bool _finishArmed;
     int _lapsCompleted;
 
+    bool _playerBound;
+
+    public bool IsPlayerBound => _playerBound;
+
     /// <summary>是否处于计时赛进行中（可用于 GameMode 判断是否允许暂停）。</summary>
     public bool IsRacing => _state == SessionState.Racing;
 
@@ -72,6 +76,7 @@ public class RcCarRaceSession2D : MonoBehaviour
         {
             _spawnPosition = carRigidbody.transform.position;
             _spawnRotation = carRigidbody.transform.rotation;
+            _playerBound = true;
         }
 
         _lapTimes = new float[Mathf.Max(1, lapsPerRound)];
@@ -84,6 +89,8 @@ public class RcCarRaceSession2D : MonoBehaviour
 
     void Update()
     {
+        if (!_playerBound)
+            return;
         if (_state == SessionState.Finished)
             return;
 
@@ -145,9 +152,46 @@ public class RcCarRaceSession2D : MonoBehaviour
         return false;
     }
 
+
+    /// <summary>运行时绑定玩家车辆（Race 场景内由 GameMode Instantiate 后调用）。</summary>
+    public void BindPlayerCar(Rigidbody2D rb, RcCarController2D ctrl, RcCarInputSystemPlayer input, Joystick joystickOptional)
+    {
+        carRigidbody = rb;
+        carController = ctrl;
+        inputPlayer = input;
+        if (joystickOptional != null)
+            uiJoystick = joystickOptional;
+
+        _spawnPosition = rb.transform.position;
+        _spawnRotation = rb.transform.rotation;
+        _playerBound = true;
+
+        _state = SessionState.WaitingFirstInput;
+        _lapsCompleted = 0;
+        _finishArmed = false;
+        for (int i = 0; i < _lapTimes.Length; i++)
+            _lapTimes[i] = 0f;
+
+        if (carController != null)
+            carController.enabled = true;
+
+        if (resultPanelRoot != null)
+            resultPanelRoot.SetActive(false);
+
+        RefreshHud();
+    }
+
+    /// <summary>关卡预制体提供的终点触发器。</summary>
+    public void SetFinishTrigger(Collider2D trigger)
+    {
+        finishTrigger = trigger;
+    }
+
     /// <summary>由终点 <see cref="RcCarFinishLine2D"/> 在玩家车辆进入时调用。</summary>
     public void NotifyFinishEnterFromCar()
     {
+        if (!_playerBound)
+            return;
         if (_state != SessionState.Racing)
             return;
         if (IsGameplayPaused())
@@ -174,6 +218,8 @@ public class RcCarRaceSession2D : MonoBehaviour
     /// <summary>由终点在玩家车辆离开触发器时调用。</summary>
     public void NotifyFinishExitFromCar()
     {
+        if (!_playerBound)
+            return;
         if (_state != SessionState.Racing)
             return;
         if (IsGameplayPaused())
@@ -211,6 +257,8 @@ public class RcCarRaceSession2D : MonoBehaviour
     /// <summary>由 <see cref="RcCarRaceGameMode"/> 在「再来一局」或暂停内重开时调用。</summary>
     public void ResetRaceToWaitingAtSpawn()
     {
+        if (!_playerBound)
+            return;
         if (resultPanelRoot != null)
             resultPanelRoot.SetActive(false);
 

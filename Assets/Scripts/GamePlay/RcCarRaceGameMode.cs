@@ -1,9 +1,9 @@
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
-/// RC 计时赛场景用 GameMode：暂停/继续、暂停内重开与退出、结算「再来一局」等入口统一在此。
+/// RC 计时赛 GameMode：暂停/结算/再来一局；Race 场景内按 GameManager 选关选车实例化关卡与车辆。
 /// </summary>
 [DisallowMultipleComponent]
 public class RcCarRaceGameMode : GameMode
@@ -16,6 +16,15 @@ public class RcCarRaceGameMode : GameMode
     [Tooltip("退出时加载的场景名；留空则仅 Application.Quit（编辑器下可能无效果）")]
     [SerializeField] string exitSceneName = "";
     [SerializeField] string trackId = "Default";
+
+    [Header("关卡 / 车辆（菜单写入 GameManager，进入 Race 后实例化；留空则沿用场景中已拖引用）")]
+    [SerializeField] RcTrackCatalog trackCatalog;
+    [SerializeField] RcCarRoster carRoster;
+    [SerializeField] Transform levelAnchor;
+    [Tooltip("可选：与车预制体内 Controller 一致的 UI 摇杆")]
+    [SerializeField] Joystick uiJoystick;
+
+    GameObject _levelInstance;
 
     string BestPrefsKey => PlayerPrefsBestKeyPrefix + trackId;
 
@@ -40,6 +49,8 @@ public class RcCarRaceGameMode : GameMode
     protected override void OnStart()
     {
         base.OnStart();
+        TryInitializeRaceFromGameManager();
+
         if (pauseMenuRoot != null)
         {
             pauseMenuRoot.SetActive(false);
@@ -50,6 +61,90 @@ public class RcCarRaceGameMode : GameMode
 
         if (resultPlayAgainButton != null)
             resultPlayAgainButton.onClick.AddListener(PlayAgainFromResult);
+    }
+
+    /// <summary>
+    /// 菜单选关/选车后进入本场景：按目录生成关卡预制体与车辆并绑定 Session。
+    /// 若未配置 catalog/roster/anchor，则保留场景中已序列化的车与 Session（兼容旧场景）。
+    /// </summary>
+    void TryInitializeRaceFromGameManager()
+    {
+        if (raceSession == null || GameManager.Instance == null)
+            return;
+        if (trackCatalog == null || carRoster == null || levelAnchor == null)
+            return;
+
+        var gm = GameManager.Instance;
+        string levelId = gm.PendingLevelId;
+        int carIdx = gm.PendingCarIndex;
+
+        if (!string.IsNullOrEmpty(levelId))
+            trackId = levelId;
+
+        UnloadLevelInstance();
+
+        var levelPrefab = trackCatalog.GetLevelPrefab(levelId);
+        if (levelPrefab == null)
+        {
+            LogClass.LogWarning(GameLogCategory.System, $"RcCarRaceGameMode: no level prefab for id '{levelId}'");
+            return;
+        }
+
+        _levelInstance = Instantiate(levelPrefab, levelAnchor);
+        var root = _levelInstance.GetComponent<RcRaceLevelRoot>();
+        Transform spawn = root != null ? root.CarSpawn : null;
+        if (spawn == null)
+        {
+            LogClass.LogError(GameLogCategory.System, "RcCarRaceGameMode: level prefab missing CarSpawn / RcRaceLevelRoot");
+            Destroy(_levelInstance);
+            _levelInstance = null;
+            return;
+        }
+
+        var carDef = carRoster.GetCar(carIdx);
+        if (carDef == null || carDef.carPrefab == null)
+        {
+            LogClass.LogError(GameLogCategory.System, $"RcCarRaceGameMode: invalid car at index {carIdx}");
+            Destroy(_levelInstance);
+            _levelInstance = null;
+            return;
+        }
+
+        var carGo = Instantiate(carDef.carPrefab, spawn.position, spawn.rotation, _levelInstance.transform);
+        var rb = carGo.GetComponent<Rigidbody2D>();
+        var ctrl = carGo.GetComponent<RcCarController2D>();
+        var inp = carGo.GetComponent<RcCarInputSystemPlayer>();
+        if (rb == null || ctrl == null || inp == null)
+        {
+            LogClass.LogError(GameLogCategory.System, "RcCarRaceGameMode: car prefab missing Rigidbody2D / RcCarController2D / RcCarInputSystemPlayer");
+            Destroy(carGo);
+            Destroy(_levelInstance);
+            _levelInstance = null;
+            return;
+        }
+
+        raceSession.BindPlayerCar(rb, ctrl, inp, uiJoystick);
+
+        if (root != null && root.FinishTrigger != null)
+            raceSession.SetFinishTrigger(root.FinishTrigger);
+
+        if (root != null)
+        {
+            foreach (var fl in root.GetFinishLinesInLevel())
+            {
+                if (fl != null)
+                    fl.BindSessionAndCar(raceSession, rb.transform);
+            }
+        }
+    }
+
+    void UnloadLevelInstance()
+    {
+        if (_levelInstance != null)
+        {
+            Destroy(_levelInstance);
+            _levelInstance = null;
+        }
     }
 
     /// <summary>结算面板上「再来一局」：仅复位 Session，不涉及暂停菜单。</summary>
@@ -81,6 +176,8 @@ public class RcCarRaceGameMode : GameMode
                 pauseMenuRoot.SetActive(false);
             ResumeGame();
         }
+
+        UnloadLevelInstance();
 
         if (!string.IsNullOrEmpty(exitSceneName))
             SceneManager.LoadScene(exitSceneName);
@@ -122,6 +219,7 @@ public class RcCarRaceGameMode : GameMode
 
     protected override void M_OnDestroy()
     {
+        UnloadLevelInstance();
         if (resultPlayAgainButton != null)
             resultPlayAgainButton.onClick.RemoveListener(PlayAgainFromResult);
         if (_pausedFromRace)

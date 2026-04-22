@@ -62,7 +62,7 @@ public class SceneStateController: StateController
         _currentState.EnterState(this);
     }
     
-    void StartLoadingScene(SceneStateAsset sceneState)
+    public void StartLoadingScene(SceneStateAsset sceneState)
     {
         if (sceneState == null) return;
         
