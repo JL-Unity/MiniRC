@@ -11,7 +11,9 @@ public class RcRaceUiBootstrap : MonoBehaviour
     void Start()
     {
         if (raceCanvas == null)
+        {
             return;
+        }
         UIManager.GetInstance().SetCanvasRoot(raceCanvas.transform);
     }
 }

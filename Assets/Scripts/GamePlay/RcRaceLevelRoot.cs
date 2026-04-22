@@ -19,10 +19,14 @@ public class RcRaceLevelRoot : MonoBehaviour
     void ResolveCarSpawn()
     {
         if (carSpawn != null)
+        {
             return;
+        }
         var t = transform.Find("CarSpawn");
         if (t != null)
+        {
             carSpawn = t;
+        }
     }
 
     public Transform CarSpawn

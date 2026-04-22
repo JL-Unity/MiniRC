@@ -11,7 +11,9 @@ public class RcCarRoster : ScriptableObject
     public RcCarDefinition GetCar(int index)
     {
         if (cars == null || cars.Length == 0)
+        {
             return null;
+        }
         index = Mathf.Clamp(index, 0, cars.Length - 1);
         return cars[index];
     }

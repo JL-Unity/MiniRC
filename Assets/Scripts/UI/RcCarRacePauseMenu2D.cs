@@ -18,27 +18,43 @@ public class RcCarRacePauseMenu2D : MonoBehaviour
     public void Bind(RcCarRaceGameMode mode)
     {
         if (_bound || mode == null)
+        {
             return;
+        }
         _bound = true;
         _mode = mode;
         if (continueButton != null)
+        {
             continueButton.onClick.AddListener(OnContinueClicked);
+        }
         if (restartButton != null)
+        {
             restartButton.onClick.AddListener(OnRestartClicked);
+        }
         if (exitButton != null)
+        {
             exitButton.onClick.AddListener(OnExitClicked);
+        }
     }
 
     void OnDestroy()
     {
         if (!_bound)
+        {
             return;
+        }
         if (continueButton != null)
+        {
             continueButton.onClick.RemoveListener(OnContinueClicked);
+        }
         if (restartButton != null)
+        {
             restartButton.onClick.RemoveListener(OnRestartClicked);
+        }
         if (exitButton != null)
+        {
             exitButton.onClick.RemoveListener(OnExitClicked);
+        }
     }
 
     void OnContinueClicked() => _mode?.ResumeRace();

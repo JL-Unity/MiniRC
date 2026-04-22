@@ -108,15 +108,21 @@ public class RcCarController2D : MonoBehaviour
     {
         rb = GetComponent<Rigidbody2D>();
         if (inputPlayer == null)
+        {
             inputPlayer = GetComponent<RcCarInputSystemPlayer>();
+        }
     }
 
     void Awake()
     {
         if (rb == null)
+        {
             rb = GetComponent<Rigidbody2D>();
+        }
         if (inputPlayer == null)
+        {
             inputPlayer = GetComponent<RcCarInputSystemPlayer>();
+        }
 
         rb.gravityScale = defaultGravityScale;
         rb.linearDamping = rigidbodyLinearDrag;
@@ -135,22 +141,32 @@ public class RcCarController2D : MonoBehaviour
         // --- 横向 [-1,1]：新 Input System 的 Move.x + UI 摇杆 ---
         float steerX = 0f;
         if (includePhysicalMoveInput && inputPlayer != null)
+        {
             steerX += inputPlayer.ReadMove().x;
+        }
         if (uiJoystick != null)
+        {
             steerX += uiJoystick.Horizontal;
+        }
 
         steerX = Mathf.Clamp(steerX, -1f, 1f);
         if (Mathf.Abs(steerX) < inputDeadZone)
+        {
             steerX = 0f;
+        }
 
         // --- 油门：Sprint / Reverse 互斥；同按或都不按为 0 ---
         bool sprint = inputPlayer != null && inputPlayer.ReadSprint();
         bool rev = inputPlayer != null && inputPlayer.ReadReverse();
         float throttle = 0f;
         if (sprint && !rev)
+        {
             throttle = 1f;
+        }
         else if (rev && !sprint)
+        {
             throttle = -1f;
+        }
 
         float dt = Time.fixedDeltaTime;
         float targetSteerDeg = steerX * maxSteerAngleDeg;
@@ -183,7 +199,9 @@ public class RcCarController2D : MonoBehaviour
         float slipBlend = Mathf.Pow(steerAbsForGrip, lateralSteerSlipPower);
         float lateralRate = Mathf.Lerp(lateralGripStraight, lateralGripTurning, slipBlend);
         if (Mathf.Abs(throttle) > 0.01f && steerAbsForGrip > 0.08f)
+        {
             lateralRate -= lateralThrottleDrift * steerAbsForGrip * Mathf.Abs(throttle);
+        }
         // 防止 rate 过低导致数值过于「滑冰」或不稳定
         lateralRate = Mathf.Max(2.5f, lateralRate);
 
@@ -193,7 +211,9 @@ public class RcCarController2D : MonoBehaviour
         float coastD = coastExtraDrag * longitudinalDragScale;
         float forwardFactor = Mathf.Exp(-fwdD * dt);
         if (Mathf.Abs(throttle) < 0.01f)
+        {
             forwardFactor *= Mathf.Exp(-coastD * dt);
+        }
 
         lateralVel *= lateralFactor;
         forwardVel *= forwardFactor;
@@ -209,7 +229,9 @@ public class RcCarController2D : MonoBehaviour
         {
             float oppose = Mathf.Sign(throttle) * Mathf.Sign(forwardAfterDamp);
             if (oppose < 0f && Mathf.Abs(forwardAfterDamp) > 0.05f)
+            {
                 rb.AddForce(-Mathf.Sign(forwardAfterDamp) * forward * brakeForce);
+            }
         }
 
         // --- 转向：同样用 steerNormPhysics，松手不再持续施加弯心角速度 ---
@@ -231,7 +253,9 @@ public class RcCarController2D : MonoBehaviour
         float t = Mathf.Clamp01(1f - Mathf.Exp(-steerOmegaGain * dt));
         // 松手：更强地把角速度拉向目标（多为 0），减少残余旋转
         if (Mathf.Abs(steerInput) < inputDeadZone)
+        {
             t = Mathf.Max(t, Mathf.Clamp01(1f - Mathf.Exp(-steerReleaseYawGain * dt)));
+        }
         float yaw = Mathf.Lerp(rb.angularVelocity, desiredYawDegPerSec, t);
         rb.angularVelocity = Mathf.Clamp(yaw, -maxYawRateDeg, maxYawRateDeg);
     }
@@ -245,7 +269,9 @@ public class RcCarController2D : MonoBehaviour
         float inp = Mathf.Clamp(steerInput, -1f, 1f);
         float mag = Mathf.Min(Mathf.Abs(sm), Mathf.Abs(inp));
         if (mag < 1e-5f)
+        {
             return 0f;
+        }
         float sign = Mathf.Abs(inp) > 1e-5f ? Mathf.Sign(inp) : Mathf.Sign(sm);
         return sign * mag;
     }

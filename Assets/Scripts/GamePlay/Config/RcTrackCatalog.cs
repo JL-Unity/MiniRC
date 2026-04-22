@@ -11,6 +11,8 @@ public class RcTrackCatalog : ScriptableObject
     public class TrackEntry
     {
         public string levelId;
+        [Tooltip("选关面板按钮上显示的名称；留空则用 levelId")]
+        public string displayName;
         public GameObject levelPrefab;
     }
 
@@ -19,11 +21,15 @@ public class RcTrackCatalog : ScriptableObject
     public GameObject GetLevelPrefab(string levelId)
     {
         if (tracks == null)
+        {
             return null;
+        }
         foreach (var e in tracks)
         {
             if (e != null && e.levelPrefab != null && e.levelId == levelId)
+            {
                 return e.levelPrefab;
+            }
         }
 
         return null;

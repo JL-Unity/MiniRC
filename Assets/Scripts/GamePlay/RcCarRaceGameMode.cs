@@ -40,7 +40,9 @@ public class RcCarRaceGameMode : GameMode
             : rawBest;
         newRecord = totalSeconds < prevBestRounded - 0.0005f;
         if (newRecord)
+        {
             PlayerPrefs.SetFloat(BestPrefsKey, totalSeconds);
+        }
         bestShownSeconds = newRecord ? totalSeconds : prevBestRounded;
     }
 
@@ -60,7 +62,9 @@ public class RcCarRaceGameMode : GameMode
         }
 
         if (resultPlayAgainButton != null)
+        {
             resultPlayAgainButton.onClick.AddListener(PlayAgainFromResult);
+        }
     }
 
     /// <summary>
@@ -70,16 +74,22 @@ public class RcCarRaceGameMode : GameMode
     void TryInitializeRaceFromGameManager()
     {
         if (raceSession == null || GameManager.Instance == null)
+        {
             return;
+        }
         if (trackCatalog == null || carRoster == null || levelAnchor == null)
+        {
             return;
+        }
 
         var gm = GameManager.Instance;
         string levelId = gm.PendingLevelId;
         int carIdx = gm.PendingCarIndex;
 
         if (!string.IsNullOrEmpty(levelId))
+        {
             trackId = levelId;
+        }
 
         UnloadLevelInstance();
 
@@ -126,14 +136,18 @@ public class RcCarRaceGameMode : GameMode
         raceSession.BindPlayerCar(rb, ctrl, inp, uiJoystick);
 
         if (root != null && root.FinishTrigger != null)
+        {
             raceSession.SetFinishTrigger(root.FinishTrigger);
+        }
 
         if (root != null)
         {
             foreach (var fl in root.GetFinishLinesInLevel())
             {
                 if (fl != null)
+                {
                     fl.BindSessionAndCar(raceSession, rb.transform);
+                }
             }
         }
     }
@@ -157,11 +171,15 @@ public class RcCarRaceGameMode : GameMode
     public void RestartRaceFromPauseMenu()
     {
         if (!_pausedFromRace)
+        {
             return;
+        }
 
         _pausedFromRace = false;
         if (pauseMenuRoot != null)
+        {
             pauseMenuRoot.SetActive(false);
+        }
         ResumeGame();
         raceSession?.ResetRaceToWaitingAtSpawn();
     }
@@ -173,41 +191,57 @@ public class RcCarRaceGameMode : GameMode
         {
             _pausedFromRace = false;
             if (pauseMenuRoot != null)
+            {
                 pauseMenuRoot.SetActive(false);
+            }
             ResumeGame();
         }
 
         UnloadLevelInstance();
 
         if (!string.IsNullOrEmpty(exitSceneName))
+        {
             SceneManager.LoadScene(exitSceneName);
+        }
         else
+        {
             Application.Quit();
+        }
     }
 
     /// <summary>仅在比赛中生效；已暂停时重复调用无效。</summary>
     public void TryPauseRace()
     {
         if (_pausedFromRace)
+        {
             return;
+        }
         if (raceSession == null || !raceSession.IsRacing)
+        {
             return;
+        }
 
         _pausedFromRace = true;
         StopGame();
         if (pauseMenuRoot != null)
+        {
             pauseMenuRoot.SetActive(true);
+        }
     }
 
     /// <summary>关闭暂停菜单并恢复 timeScale；非本模式触发的暂停不会执行任何操作。</summary>
     public void ResumeRace()
     {
         if (!_pausedFromRace)
+        {
             return;
+        }
 
         _pausedFromRace = false;
         if (pauseMenuRoot != null)
+        {
             pauseMenuRoot.SetActive(false);
+        }
         ResumeGame();
     }
 
@@ -221,9 +255,13 @@ public class RcCarRaceGameMode : GameMode
     {
         UnloadLevelInstance();
         if (resultPlayAgainButton != null)
+        {
             resultPlayAgainButton.onClick.RemoveListener(PlayAgainFromResult);
+        }
         if (_pausedFromRace)
+        {
             ResumeRace();
+        }
         base.M_OnDestroy();
     }
 }

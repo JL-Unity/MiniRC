@@ -65,7 +65,9 @@ public class RcCarRaceSession2D : MonoBehaviour
         get
         {
             if (_tmpUguiType == null)
+            {
                 _tmpUguiType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro");
+            }
             return _tmpUguiType;
         }
     }
@@ -82,7 +84,9 @@ public class RcCarRaceSession2D : MonoBehaviour
         _lapTimes = new float[Mathf.Max(1, lapsPerRound)];
 
         if (resultPanelRoot != null)
+        {
             resultPanelRoot.SetActive(false);
+        }
 
         RefreshHud();
     }
@@ -90,24 +94,34 @@ public class RcCarRaceSession2D : MonoBehaviour
     void Update()
     {
         if (!_playerBound)
+        {
             return;
+        }
         if (_state == SessionState.Finished)
+        {
             return;
+        }
 
         if (_state == SessionState.WaitingFirstInput)
         {
             if (HasAnyInput())
+            {
                 BeginRaceFromFirstInput();
+            }
         }
 
         if (_state == SessionState.Racing && !IsGameplayPaused())
+        {
             UpdateHudLive();
+        }
     }
 
     static bool IsGameplayPaused()
     {
         if (GameManager.Instance == null)
+        {
             return false;
+        }
         var mode = GameManager.Instance.GetGameMode();
         return mode != null && mode.isGameStop;
     }
@@ -118,13 +132,19 @@ public class RcCarRaceSession2D : MonoBehaviour
         _lapsCompleted = 0;
         _lapStartTime = Time.time;
         for (int i = 0; i < _lapTimes.Length; i++)
+        {
             _lapTimes[i] = 0f;
+        }
 
         if (finishTrigger != null && carRigidbody != null
             && finishTrigger.OverlapPoint(carRigidbody.position))
+        {
             _finishArmed = false;
+        }
         else
+        {
             _finishArmed = true;
+        }
 
         RefreshHud();
     }
@@ -134,24 +154,33 @@ public class RcCarRaceSession2D : MonoBehaviour
         if (inputPlayer != null)
         {
             if (inputPlayer.ReadMove().sqrMagnitude > inputDeadZone * inputDeadZone)
+            {
                 return true;
+            }
             if (inputPlayer.ReadSprint())
+            {
                 return true;
+            }
             if (inputPlayer.ReadReverse())
+            {
                 return true;
+            }
         }
 
         if (uiJoystick != null)
         {
             if (Mathf.Abs(uiJoystick.Horizontal) > inputDeadZone)
+            {
                 return true;
+            }
             if (Mathf.Abs(uiJoystick.Vertical) > inputDeadZone)
+            {
                 return true;
+            }
         }
 
         return false;
     }
-
 
     /// <summary>运行时绑定玩家车辆（Race 场景内由 GameMode Instantiate 后调用）。</summary>
     public void BindPlayerCar(Rigidbody2D rb, RcCarController2D ctrl, RcCarInputSystemPlayer input, Joystick joystickOptional)
@@ -160,7 +189,9 @@ public class RcCarRaceSession2D : MonoBehaviour
         carController = ctrl;
         inputPlayer = input;
         if (joystickOptional != null)
+        {
             uiJoystick = joystickOptional;
+        }
 
         _spawnPosition = rb.transform.position;
         _spawnRotation = rb.transform.rotation;
@@ -170,13 +201,19 @@ public class RcCarRaceSession2D : MonoBehaviour
         _lapsCompleted = 0;
         _finishArmed = false;
         for (int i = 0; i < _lapTimes.Length; i++)
+        {
             _lapTimes[i] = 0f;
+        }
 
         if (carController != null)
+        {
             carController.enabled = true;
+        }
 
         if (resultPanelRoot != null)
+        {
             resultPanelRoot.SetActive(false);
+        }
 
         RefreshHud();
     }
@@ -191,13 +228,21 @@ public class RcCarRaceSession2D : MonoBehaviour
     public void NotifyFinishEnterFromCar()
     {
         if (!_playerBound)
+        {
             return;
+        }
         if (_state != SessionState.Racing)
+        {
             return;
+        }
         if (IsGameplayPaused())
+        {
             return;
+        }
         if (!_finishArmed)
+        {
             return;
+        }
 
         float now = Time.time;
         float dt = now - _lapStartTime;
@@ -205,25 +250,35 @@ public class RcCarRaceSession2D : MonoBehaviour
         _lapStartTime = now;
 
         if (_lapsCompleted < _lapTimes.Length)
+        {
             _lapTimes[_lapsCompleted] = dt;
+        }
         _lapsCompleted++;
         _finishArmed = false;
 
         RefreshHud();
 
         if (_lapsCompleted >= lapsPerRound)
+        {
             EndRace();
+        }
     }
 
     /// <summary>由终点在玩家车辆离开触发器时调用。</summary>
     public void NotifyFinishExitFromCar()
     {
         if (!_playerBound)
+        {
             return;
+        }
         if (_state != SessionState.Racing)
+        {
             return;
+        }
         if (IsGameplayPaused())
+        {
             return;
+        }
         _finishArmed = true;
     }
 
@@ -232,7 +287,9 @@ public class RcCarRaceSession2D : MonoBehaviour
         _state = SessionState.Finished;
 
         if (carController != null)
+        {
             carController.enabled = false;
+        }
         if (carRigidbody != null)
         {
             carRigidbody.linearVelocity = Vector2.zero;
@@ -244,10 +301,14 @@ public class RcCarRaceSession2D : MonoBehaviour
         float bestShown = total;
         if (GameManager.Instance != null
             && GameManager.Instance.GetGameMode() is RcCarRaceGameMode rcMode)
+        {
             rcMode.ResolveBestTotal(total, out bestShown, out _);
+        }
 
         if (resultPanelRoot != null)
+        {
             resultPanelRoot.SetActive(true);
+        }
         SetUIText(resultCurrentLine, "本次成绩： " + FormatTime(total));
         SetUIText(resultBestLine, "最好成绩： " + FormatTime(bestShown));
 
@@ -258,9 +319,13 @@ public class RcCarRaceSession2D : MonoBehaviour
     public void ResetRaceToWaitingAtSpawn()
     {
         if (!_playerBound)
+        {
             return;
+        }
         if (resultPanelRoot != null)
+        {
             resultPanelRoot.SetActive(false);
+        }
 
         ResetCarToSpawn();
 
@@ -268,10 +333,14 @@ public class RcCarRaceSession2D : MonoBehaviour
         _lapsCompleted = 0;
         _finishArmed = false;
         for (int i = 0; i < _lapTimes.Length; i++)
+        {
             _lapTimes[i] = 0f;
+        }
 
         if (carController != null)
+        {
             carController.enabled = true;
+        }
 
         RefreshHud();
     }
@@ -279,7 +348,9 @@ public class RcCarRaceSession2D : MonoBehaviour
     void ResetCarToSpawn()
     {
         if (carRigidbody == null)
+        {
             return;
+        }
 
         carRigidbody.transform.SetPositionAndRotation(_spawnPosition, _spawnRotation);
         carRigidbody.linearVelocity = Vector2.zero;
@@ -289,12 +360,16 @@ public class RcCarRaceSession2D : MonoBehaviour
     void UpdateHudLive()
     {
         if (_state != SessionState.Racing)
+        {
             return;
+        }
 
         ApplyLapHudTexts();
 
         if (hudTotalLine == null)
+        {
             return;
+        }
 
         float sum = ComputeTotalElapsedIncludingCurrentLap();
         SetUIText(hudTotalLine, "合计： " + FormatTime(sum));
@@ -306,13 +381,17 @@ public class RcCarRaceSession2D : MonoBehaviour
         if (_lapsCompleted < lapsPerRound)
         {
             for (int i = 0; i < _lapsCompleted; i++)
+            {
                 sum += _lapTimes[i];
+            }
             sum += Time.time - _lapStartTime;
         }
         else
         {
             for (int i = 0; i < lapsPerRound; i++)
+            {
                 sum += _lapTimes[i];
+            }
         }
 
         return sum;
@@ -323,12 +402,18 @@ public class RcCarRaceSession2D : MonoBehaviour
         ApplyLapHudTexts();
 
         if (hudTotalLine == null)
+        {
             return;
+        }
 
         if (_state == SessionState.WaitingFirstInput)
+        {
             SetUIText(hudTotalLine, "合计： --");
+        }
         else
+        {
             SetUIText(hudTotalLine, "合计： " + FormatTime(ComputeTotalElapsedIncludingCurrentLap()));
+        }
     }
 
     void ApplyLapHudTexts()
@@ -341,7 +426,9 @@ public class RcCarRaceSession2D : MonoBehaviour
     void SetLapHudOne(Component label, int index)
     {
         if (label == null)
+        {
             return;
+        }
         if (index >= lapsPerRound)
         {
             SetUIText(label, "");
@@ -354,10 +441,14 @@ public class RcCarRaceSession2D : MonoBehaviour
     string BuildLapLineText(int index)
     {
         if (_state == SessionState.WaitingFirstInput)
+        {
             return $"第{index + 1}圈： --";
+        }
 
         if (index < _lapsCompleted)
+        {
             return $"第{index + 1}圈： {FormatTime(_lapTimes[index])}";
+        }
 
         if (_state == SessionState.Racing && index == _lapsCompleted && _lapsCompleted < lapsPerRound)
         {
@@ -377,7 +468,9 @@ public class RcCarRaceSession2D : MonoBehaviour
     static void SetUIText(Component c, string value)
     {
         if (c == null)
+        {
             return;
+        }
 
         if (c is Text leg)
         {
@@ -395,20 +488,28 @@ public class RcCarRaceSession2D : MonoBehaviour
 
         var tmpType = TmpUguiType;
         if (tmpType == null)
+        {
             return;
+        }
 
         var tmp = go.GetComponent(tmpType) ?? go.GetComponentInChildren(tmpType, true);
         if (tmp != null)
+        {
             tmpType.GetProperty("text")?.SetValue(tmp, value);
+        }
         else if (tmpType.IsInstanceOfType(c))
+        {
             tmpType.GetProperty("text")?.SetValue(c, value);
+        }
     }
 
     /// <summary>显示到 0.01 秒（百分之一秒），与 <see cref="RoundToHundredths"/> 一致。</summary>
     public static string FormatTime(float seconds)
     {
         if (seconds < 0f || float.IsInfinity(seconds) || float.IsNaN(seconds))
+        {
             return "--";
+        }
 
         seconds = RoundToHundredths(seconds);
         int totalCenti = Mathf.RoundToInt(seconds * 100f);
@@ -419,11 +520,15 @@ public class RcCarRaceSession2D : MonoBehaviour
         sb.Append(m);
         sb.Append(':');
         if (s < 10)
+        {
             sb.Append('0');
+        }
         sb.Append(s);
         sb.Append('.');
         if (cs < 10)
+        {
             sb.Append('0');
+        }
         sb.Append(cs);
         return sb.ToString();
     }

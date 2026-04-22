@@ -29,25 +29,35 @@ public class RcCarFinishLine2D : MonoBehaviour
     void OnTriggerEnter2D(Collider2D other)
     {
         if (session == null || carRoot == null)
+        {
             return;
+        }
         if (!IsCarCollider(other))
+        {
             return;
+        }
         session.NotifyFinishEnterFromCar();
     }
 
     void OnTriggerExit2D(Collider2D other)
     {
         if (session == null || carRoot == null)
+        {
             return;
+        }
         if (!IsCarCollider(other))
+        {
             return;
+        }
         session.NotifyFinishExitFromCar();
     }
 
     bool IsCarCollider(Collider2D other)
     {
         if (other.attachedRigidbody == null)
+        {
             return false;
+        }
         return other.attachedRigidbody.transform == carRoot;
     }
 }

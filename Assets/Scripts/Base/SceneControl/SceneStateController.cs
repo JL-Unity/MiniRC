@@ -64,7 +64,10 @@ public class SceneStateController: StateController
     
     public void StartLoadingScene(SceneStateAsset sceneState)
     {
-        if (sceneState == null) return;
+        if (sceneState == null)
+        {
+            return;
+        }
         
         _currentState?.ExitState();
 

@@ -42,7 +42,10 @@ public class Timer
     float now;
     public void Update()
     {
-        if (IsEnd || IsPaused) return;
+        if (IsEnd || IsPaused)
+        {
+            return;
+        }
         
         Elapsed = IsPaused ? _pausedTime - _startTime - _totalPausedDuration 
             : Time.time - _startTime - _totalPausedDuration;
@@ -65,7 +68,10 @@ public class Timer
 
     public void Resume()
     {
-        if (!IsPaused) return;
+        if (!IsPaused)
+        {
+            return;
+        }
         _totalPausedDuration += (Time.time - _pausedTime);
         IsPaused = false;
     }
