@@ -1,71 +1,111 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.SceneManagement;
 
 /// <summary>
-/// 菜单第二步（在 <see cref="RcLevelSelectPanel"/> 之后）：展示三辆车属性条，
-/// 确认后只写入车辆下标并加载 Race（关卡 id 已在选关面板写入 GameManager）。
+/// 菜单第二步（在 <see cref="RcLevelSelectPanel"/> 之后）：左右切换在 roster 内选车，
+/// 单套 Slider 进度条 + 车名/预览图；切换时用插值刷新进度以突出数值差异。
+/// 进入比赛场景由 <see cref="GameManager.EnterRaceFromCarSelect"/> 处理。
 /// </summary>
-public class RcCarSelectPanel : BasePanel
+public class RcCarSelectPanel : BasePanel, IStartMenuPanelAnimation
 {
     [SerializeField] RcCarRoster roster;
-    [Tooltip("sceneName 指向 Race 场景的 SceneStateAsset")]
-    [SerializeField] SceneStateAsset raceSceneAsset;
+    [SerializeField] Button prevCarButton;
+    [SerializeField] Button nextCarButton;
+    [SerializeField] Text carNameText;
+    [SerializeField] Image carPreviewImage;
+    [SerializeField] StatRowUi statDisplay;
 
-    [Header("可选：三辆车按钮，点击切换选中")]
-    [SerializeField] Button[] carSelectButtons;
-
-    [Header("可选：每辆一行（与 roster 顺序一致）")]
-    [SerializeField] StatRowUi[] rows;
+    [Header("属性条动画")]
+    [Tooltip("进度插值快慢（越大越快）")]
+    [SerializeField] float barLerpSharpness = 14f;
 
     [SerializeField] Button confirmButton;
-
-    [Header("可选：返回选关面板")]
     [SerializeField] Button backButton;
 
     [System.Serializable]
     public class StatRowUi
     {
-        public Image speedFill;
-        public Image driftFill;
-        public Image accelFill;
-        public Text speedText;
-        public Text driftText;
-        public Text accelText;
+        public Slider speedBar;
+        public Slider gripBar;
+        public Slider accelBar;
     }
 
     int _selectedIndex;
 
+    int _targetSpeedPct;
+    int _targetGripPct;
+    int _targetAccelPct;
+
+    float _shownSpeedPct;
+    float _shownGripPct;
+    float _shownAccelPct;
+
+    bool _snapBarsOnNextApply = true;
+
     void Awake()
     {
-        if (carSelectButtons != null)
+        if (prevCarButton != null)
         {
-            for (int i = 0; i < carSelectButtons.Length; i++)
-            {
-                int idx = i;
-                if (carSelectButtons[i] != null)
-                {
-                    carSelectButtons[i].onClick.AddListener(() => SelectCar(idx));
-                }
-            }
+            prevCarButton.onClick.AddListener(SelectPreviousCar);
+        }
+
+        if (nextCarButton != null)
+        {
+            nextCarButton.onClick.AddListener(SelectNextCar);
         }
 
         if (confirmButton != null)
         {
             confirmButton.onClick.AddListener(OnConfirmStartRace);
         }
+
         if (backButton != null)
         {
             backButton.onClick.AddListener(OnBackToLevelSelect);
         }
     }
 
+    void Update()
+    {
+        if (roster == null || statDisplay == null || _snapBarsOnNextApply)
+        {
+            return;
+        }
+
+        float t = 1f - Mathf.Exp(-barLerpSharpness * Time.unscaledDeltaTime);
+        _shownSpeedPct = Mathf.Lerp(_shownSpeedPct, _targetSpeedPct, t);
+        _shownGripPct = Mathf.Lerp(_shownGripPct, _targetGripPct, t);
+        _shownAccelPct = Mathf.Lerp(_shownAccelPct, _targetAccelPct, t);
+
+        if (Mathf.Abs(_shownSpeedPct - _targetSpeedPct) < 0.05f
+            && Mathf.Abs(_shownGripPct - _targetGripPct) < 0.05f
+            && Mathf.Abs(_shownAccelPct - _targetAccelPct) < 0.05f)
+        {
+            _shownSpeedPct = _targetSpeedPct;
+            _shownGripPct = _targetGripPct;
+            _shownAccelPct = _targetAccelPct;
+        }
+
+        ApplyStatBars(_shownSpeedPct, _shownGripPct, _shownAccelPct);
+    }
+
     void OnDestroy()
     {
+        if (prevCarButton != null)
+        {
+            prevCarButton.onClick.RemoveListener(SelectPreviousCar);
+        }
+
+        if (nextCarButton != null)
+        {
+            nextCarButton.onClick.RemoveListener(SelectNextCar);
+        }
+
         if (confirmButton != null)
         {
             confirmButton.onClick.RemoveListener(OnConfirmStartRace);
         }
+
         if (backButton != null)
         {
             backButton.onClick.RemoveListener(OnBackToLevelSelect);
@@ -74,22 +114,70 @@ public class RcCarSelectPanel : BasePanel
 
     void OnBackToLevelSelect()
     {
-        UIManager.GetInstance().PopPanel();
+        PlayCloseAnimation();
     }
 
-    void SelectCar(int index)
+    void SelectPreviousCar()
     {
-        if (roster == null)
+        StepSelection(-1);
+    }
+
+    void SelectNextCar()
+    {
+        StepSelection(1);
+    }
+
+    void StepSelection(int delta)
+    {
+        if (roster == null || roster.Count <= 0)
         {
             return;
         }
-        _selectedIndex = Mathf.Clamp(index, 0, roster.Count - 1);
-        RefreshStatDisplays();
+
+        int n = roster.Count;
+        _selectedIndex = ((_selectedIndex + delta) % n + n) % n;
+        _snapBarsOnNextApply = false;
+        PullTargetsFromSelection();
+        RefreshNameAndPreview();
     }
 
     public override void OnEnter()
     {
-        RefreshStatDisplays();
+        if (roster != null && roster.Count > 0)
+        {
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, roster.Count - 1);
+        }
+        else
+        {
+            _selectedIndex = 0;
+        }
+
+        _snapBarsOnNextApply = true;
+        PullTargetsFromSelection();
+        _shownSpeedPct = _targetSpeedPct;
+        _shownGripPct = _targetGripPct;
+        _shownAccelPct = _targetAccelPct;
+        ApplyStatBars(_shownSpeedPct, _shownGripPct, _shownAccelPct);
+        RefreshNameAndPreview();
+        PlayOpenAnimation();
+    }
+
+    public void PlayOpenAnimation()
+    {
+        PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultOpenClipName);
+    }
+
+    public void PlayCloseAnimation()
+    {
+        if (!PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultCloseClipName))
+        {
+            OnCloseAnimationComplete();
+        }
+    }
+
+    public void OnCloseAnimationComplete()
+    {
+        UIManager.GetInstance().PopPanel();
     }
 
     public override void OnPause() { }
@@ -98,70 +186,80 @@ public class RcCarSelectPanel : BasePanel
 
     public override void OnExit() { }
 
-    void RefreshStatDisplays()
+    void PullTargetsFromSelection()
     {
-        if (roster == null || roster.cars == null || rows == null)
+        var def = roster != null ? roster.GetCar(_selectedIndex) : null;
+        if (def == null)
         {
+            _targetSpeedPct = _targetGripPct = _targetAccelPct = 0;
             return;
         }
 
-        for (int i = 0; i < rows.Length && i < roster.cars.Length; i++)
+        _targetSpeedPct = def.speedPercent;
+        _targetGripPct = def.gripPercent;
+        _targetAccelPct = def.accelPercent;
+    }
+
+    void RefreshNameAndPreview()
+    {
+        var def = roster != null ? roster.GetCar(_selectedIndex) : null;
+
+        if (carNameText != null)
         {
-            var def = roster.cars[i];
-            var row = rows[i];
-            if (def == null || row == null)
+            carNameText.text = def != null ? def.displayName : "";
+        }
+
+        if (carPreviewImage != null)
+        {
+            if (def != null && def.previewSprite != null)
             {
-                continue;
+                carPreviewImage.sprite = def.previewSprite;
+                carPreviewImage.enabled = true;
             }
-
-            SetBar(row.speedFill, def.speedPercent);
-            SetBar(row.driftFill, def.driftPercent);
-            SetBar(row.accelFill, def.accelPercent);
-
-            SetInt(row.speedText, def.speedPercent);
-            SetInt(row.driftText, def.driftPercent);
-            SetInt(row.accelText, def.accelPercent);
+            else
+            {
+                carPreviewImage.sprite = null;
+                carPreviewImage.enabled = false;
+            }
         }
     }
 
-    static void SetBar(Image img, int pct)
+    /// <summary>
+    /// 按 0–100 设定 Slider 比例；若 Slider 的 min/max 不是 0–100，则用 normalizedValue 映射整条轨道。
+    /// </summary>
+    void ApplyStatBars(float speedPct, float gripPct, float accelPct)
     {
-        if (img == null)
+        if (statDisplay == null)
         {
             return;
         }
-        img.type = Image.Type.Filled;
-        img.fillAmount = Mathf.Clamp01(pct / 100f);
+
+        SetSliderFromPercent(statDisplay.speedBar, speedPct);
+        SetSliderFromPercent(statDisplay.gripBar, gripPct);
+        SetSliderFromPercent(statDisplay.accelBar, accelPct);
     }
 
-    static void SetInt(Text t, int v)
+    static void SetSliderFromPercent(Slider slider, float pct0To100)
     {
-        if (t == null)
+        if (slider == null)
         {
             return;
         }
-        t.text = v.ToString();
+
+        float n = Mathf.Clamp01(pct0To100 / 100f);
+        float v = Mathf.Lerp(slider.minValue, slider.maxValue, n);
+        slider.SetValueWithoutNotify(v);
     }
 
-    /// <summary>写入车辆选择并异步加载 Race 场景（关卡由选关面板已写入）。</summary>
+    /// <summary>确认选车：交给 <see cref="GameManager"/> 写入意图并加载比赛场景。</summary>
     void OnConfirmStartRace()
     {
-        if (GameManager.Instance != null)
+        if (GameManager.Instance == null)
         {
-            GameManager.Instance.SetPendingCarIndex(_selectedIndex);
+            LogClass.LogWarning(GameLogCategory.UIManager, "RcCarSelectPanel: GameManager 缺失，无法进入比赛。");
+            return;
         }
 
-        if (SceneStateController.Instance != null && raceSceneAsset != null)
-        {
-            SceneStateController.Instance.StartLoadingScene(raceSceneAsset);
-        }
-        else if (raceSceneAsset != null && !string.IsNullOrEmpty(raceSceneAsset.sceneName))
-        {
-            SceneManager.LoadScene(raceSceneAsset.sceneName);
-        }
-        else
-        {
-            Debug.LogWarning("RcCarSelectPanel: 请配置 SceneStateController（DontDestroy）与 raceSceneAsset，或直接填 raceSceneAsset 的场景名。");
-        }
+        GameManager.Instance.EnterRaceFromCarSelect(_selectedIndex);
     }
 }

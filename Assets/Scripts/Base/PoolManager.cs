@@ -18,7 +18,7 @@ public class PoolManager : BaseManager<PoolManager>
         GameObject obj = null;
         if (poolDic.ContainsKey(name) && poolDic[name].Count > 0)
         {
-            //Debug.Log("Find item" + name);
+            //LogClass.LogGame(GameLogCategory.System, "Find item" + name);
             obj = poolDic[name][0];
             obj.transform.position = location;
             poolDic[name].RemoveAt(0);
@@ -29,7 +29,7 @@ public class PoolManager : BaseManager<PoolManager>
             if(loadObject) 
             {
                 obj = GameObject.Instantiate(loadObject, location, Quaternion.identity); 
-                //Debug.Log("Create item" + name);
+                //LogClass.LogGame(GameLogCategory.System, "Create item" + name);
             }
         }
         obj.SetActive(true);
@@ -41,7 +41,7 @@ public class PoolManager : BaseManager<PoolManager>
         GameObject obj = null;
         if (poolDic.ContainsKey(name) && poolDic[name].Count > 0)
         {
-            //Debug.Log("Find item" + name);
+            //LogClass.LogGame(GameLogCategory.System, "Find item" + name);
             obj = poolDic[name][0];
             obj.transform.position = location;
             poolDic[name].RemoveAt(0);
@@ -52,7 +52,7 @@ public class PoolManager : BaseManager<PoolManager>
             if(loadObject) 
             {
                 obj = GameObject.Instantiate(loadObject, location, rotation); 
-                //Debug.Log("Create item" + name);
+                //LogClass.LogGame(GameLogCategory.System, "Create item" + name);
             }
         }
         obj.SetActive(true);
@@ -68,14 +68,14 @@ public class PoolManager : BaseManager<PoolManager>
         GameObject obj = null;
         if (poolDic.ContainsKey(name) && poolDic[name].Count > 0)
         {
-            //Debug.Log("Find UI:" + name);
+            //LogClass.LogGame(GameLogCategory.System, "Find UI:" + name);
             obj = poolDic[name][0];
             poolDic[name].RemoveAt(0);
         }
         else
         {
             obj = GameObject.Instantiate(Resources.Load<GameObject>(name), parentTransfrom, false);
-            //Debug.Log(name);
+            //LogClass.LogGame(GameLogCategory.System, name);
         }
         obj.SetActive(true);
         return obj;
@@ -98,6 +98,6 @@ public class PoolManager : BaseManager<PoolManager>
     public override void Clear()
     {
         poolDic.Clear();
-        Debug.Log("【PoolManager】对象池清空");
+        LogClass.LogGame(GameLogCategory.System, "PoolManager: 对象池清空");
     }
 }

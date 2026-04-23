@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: RcCarRoster
   m_EditorClassIdentifier: Assembly-CSharp::RcCarRoster
   cars:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 11400000, guid: b23bec300e38cee4cb0dac95f7a874b8, type: 2}
+  - {fileID: 11400000, guid: 5d28b87bf3c404c4cbcaa5470ee8966f, type: 2}
+  - {fileID: 11400000, guid: 5faf9a4cf276f0c4e85053fb35f9ef27, type: 2}
+  - {fileID: 11400000, guid: b1e93e321ff8e994897e87787103eb7a, type: 2}

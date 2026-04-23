@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -13,9 +12,7 @@ public class RcCarRaceGameMode : GameMode
     [SerializeField] RcCarRaceSession2D raceSession;
     [SerializeField] GameObject pauseMenuRoot;
     [SerializeField] Button resultPlayAgainButton;
-    [Tooltip("退出时加载的场景名；留空则仅 Application.Quit（编辑器下可能无效果）")]
-    [SerializeField] string exitSceneName = "";
-    [SerializeField] string trackId = "Default";
+    [SerializeField] string trackId = "001";
 
     [Header("关卡 / 车辆（菜单写入 GameManager，进入 Race 后实例化；留空则沿用场景中已拖引用）")]
     [SerializeField] RcTrackCatalog trackCatalog;
@@ -184,7 +181,7 @@ public class RcCarRaceGameMode : GameMode
         raceSession?.ResetRaceToWaitingAtSpawn();
     }
 
-    /// <summary>暂停菜单内退出：解除暂停后加载 <see cref="exitSceneName"/> 或退出应用。</summary>
+    /// <summary>暂停菜单内退出：解除暂停后由 <see cref="GameManager.ReturnToMainMenuFromRace"/> 切回主菜单。</summary>
     public void ExitRace()
     {
         if (_pausedFromRace)
@@ -199,12 +196,13 @@ public class RcCarRaceGameMode : GameMode
 
         UnloadLevelInstance();
 
-        if (!string.IsNullOrEmpty(exitSceneName))
+        if (GameManager.Instance != null)
         {
-            SceneManager.LoadScene(exitSceneName);
+            GameManager.Instance.ReturnToMainMenuFromRace();
         }
         else
         {
+            LogClass.LogWarning(GameLogCategory.System, "RcCarRaceGameMode.ExitRace: GameManager 缺失，无法切回主菜单。");
             Application.Quit();
         }
     }

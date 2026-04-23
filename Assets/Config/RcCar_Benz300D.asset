@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: RcCar_Benz300D
   m_EditorClassIdentifier: Assembly-CSharp::RcCarDefinition
   carId: 001
-  displayName: Benz300
-  carPrefab: {fileID: 0}
-  speedPercent: 50
-  driftPercent: 50
+  displayName: "\u5954\u5954300D"
+  previewSprite: {fileID: -255649592688716892, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
+  carPrefab: {fileID: 107269714000765684, guid: 07a27b124b859d645886b203ca531d61, type: 3}
+  speedPercent: 70
   accelPercent: 50
+  gripPercent: 50

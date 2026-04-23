@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2f82766e102a6814a963f8fc95416f3a, type: 3}
+  m_Name: RcCar_FerrariSP3
+  m_EditorClassIdentifier: Assembly-CSharp::RcCarDefinition
+  carId: 002
+  displayName: "\u9A6C\u62C9\u5229SP3"
+  previewSprite: {fileID: 3927905558057155082, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
+  carPrefab: {fileID: 1911165772003514245, guid: 9c97c0af31dfa7441a1ff975c8e85817, type: 3}
+  speedPercent: 90
+  accelPercent: 70
+  gripPercent: 30

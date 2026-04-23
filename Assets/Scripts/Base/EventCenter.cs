@@ -93,6 +93,6 @@ public class EventCenter : BaseManager<EventCenter>
     public override void Clear()
     {
         _sceneScoped.Clear();
-        Debug.Log("【EventCenter】场景内事件订阅已清空");
+        LogClass.LogGame(GameLogCategory.System, "EventCenter: 场景内事件订阅已清空");
     }
 }

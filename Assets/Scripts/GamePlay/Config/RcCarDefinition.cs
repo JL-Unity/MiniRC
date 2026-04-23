@@ -11,9 +11,15 @@ public class RcCarDefinition : ScriptableObject
 
     public string displayName = "RC";
 
+    [Tooltip("选车界面展示用图片（可选，与属性条贴图无关）")]
+    public Sprite previewSprite;
+
     public GameObject carPrefab;
 
     [Range(0, 100)] public int speedPercent = 50;
-    [Range(0, 100)] public int driftPercent = 50;
+
     [Range(0, 100)] public int accelPercent = 50;
+    
+    [Range(0, 100)] public int gripPercent = 50;
+
 }

@@ -5,7 +5,7 @@ using UnityEngine.UI;
 /// 菜单第一步：选关卡。确认某一关后写入 <see cref="GameManager.SetPendingLevelId"/>，
 /// 再 <see cref="UIManager.PushPanel"/> 打开选车面板（Resources 路径名见 <see cref="carSelectPanelResourceName"/>）。
 /// </summary>
-public class RcLevelSelectPanel : BasePanel
+public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
 {
     [Header("关卡目录")]
     [SerializeField] RcTrackCatalog catalog;
@@ -25,6 +25,25 @@ public class RcLevelSelectPanel : BasePanel
     {
         BindButtonsIfNeeded();
         RefreshLabels();
+        PlayOpenAnimation();
+    }
+
+    public void PlayOpenAnimation()
+    {
+        PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultOpenClipName);
+    }
+
+    public void PlayCloseAnimation()
+    {
+        if (!PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultCloseClipName))
+        {
+            OnCloseAnimationComplete();
+        }
+    }
+
+    public void OnCloseAnimationComplete()
+    {
+        UIManager.GetInstance().PopPanel();
     }
 
     public override void OnPause() { }
@@ -32,13 +51,13 @@ public class RcLevelSelectPanel : BasePanel
     public override void OnResume() { }
 
     public override void OnExit() { }
-
+    
     void OnBackClicked()
     {
-        UIManager.GetInstance().PopPanel();
+        PlayCloseAnimation();
     }
 
-    void BindLevelButtonsIfNeeded()
+    void BindButtonsIfNeeded()
     {
         if (catalog == null || catalog.tracks == null || levelButtons == null)
         {
@@ -66,7 +85,7 @@ public class RcLevelSelectPanel : BasePanel
             levelButtons[i].onClick.AddListener(() => OnLevelChosen(idx));
         }
     }
-
+    
     void RefreshLabels()
     {
         if (catalog?.tracks == null || levelLabels == null)
@@ -108,6 +127,22 @@ public class RcLevelSelectPanel : BasePanel
             GameManager.Instance.SetPendingLevelId(entry.levelId);
         }
 
-        UIManager.GetInstance().PushPanel(carSelectPanelResourceName);
+        UIManager.GetInstance().PushPanel(PanelPath.StartUpPath + carSelectPanelResourceName);
+    }
+
+    void OnDestroy()
+    {
+        if (backButton != null)
+        {
+            backButton.onClick.RemoveAllListeners();
+        }
+        for (int i = 0; i < levelButtons.Length; i++)
+        {
+            if (levelButtons[i] == null)
+            {
+                continue;
+            }
+            levelButtons[i].onClick.RemoveAllListeners();
+        }
     }
 }

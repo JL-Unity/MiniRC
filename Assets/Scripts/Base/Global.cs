@@ -5,6 +5,7 @@ using UnityEngine;
 /// <summary>Resources 下路径常量（拼写已修正，便于检索）。</summary>
 public static class ResourcePath
 {
+    public const string RoadPath = "Road/";
 }
 
 public static class PanelPath

@@ -20,7 +20,9 @@ public class SceneStateController: StateController
     //是否需要加载UI
     public bool isNeedLoadingUI = false;
     //加载进度条
-    public GameObject loadingUI;
+    public string loadingPanelName = PanelPath.StartUpPath + "LoadingPanel";
+
+    private LoadingPanel _loadingPanel;
     
     //异步加载场景
     private AsyncOperation _asyncOperation;
@@ -62,13 +64,24 @@ public class SceneStateController: StateController
         _currentState.EnterState(this);
     }
     
+    /// <summary>是否存在未完成的 <see cref="SceneManager.LoadSceneAsync"/>（含未 allowSceneActivation 的阶段）。</summary>
+    public bool IsAsyncLoadInProgress => _asyncOperation != null;
+
     public void StartLoadingScene(SceneStateAsset sceneState)
     {
         if (sceneState == null)
         {
             return;
         }
-        
+
+        if (_asyncOperation != null)
+        {
+            LogClass.LogWarning(
+                GameLogCategory.SceneStateController,
+                "已有场景异步加载进行中，忽略重复切换请求。");
+            return;
+        }
+
         _currentState?.ExitState();
 
         _currentState = sceneState;
@@ -79,6 +92,11 @@ public class SceneStateController: StateController
         {
             _asyncOperation.allowSceneActivation = false;
             StartCoroutine(processSceneLoading());
+            _loadingPanel = UIManager.GetInstance().PushPanel(loadingPanelName).GetComponent<LoadingPanel>();
+            if(_loadingPanel != null)
+            {
+                _loadingPanel.SetLoadingProgress(0);
+            }
         }
         else
         {
@@ -94,7 +112,7 @@ public class SceneStateController: StateController
             if (fakeRate <= rate)
             {
                 //假装加载
-                fakeRate = Mathf.SmoothDamp(fakeRate, rate, ref dampVelocity, 0.5f);
+                fakeRate = Mathf.SmoothDamp(fakeRate, rate, ref dampVelocity, 0.9f);
             }
 
             ProcessLoadingUI(fakeRate);
@@ -103,6 +121,7 @@ public class SceneStateController: StateController
                 _asyncOperation.allowSceneActivation = true;
                 _currentState.EnterState(this);
                 _asyncOperation = null;
+                UIManager.GetInstance().PopPanel();
             }
         }
     }
@@ -120,9 +139,13 @@ public class SceneStateController: StateController
         }
         rate = 1;
     }
+
     public void ProcessLoadingUI(float rate)
     {
-        //todo
+        if(_loadingPanel != null)
+        {
+            _loadingPanel.SetLoadingProgress(rate);
+        }
     }
 
     // public void EnterGame()

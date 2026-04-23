@@ -31,14 +31,14 @@ public class RcCarInputSystemPlayer : MonoBehaviour
     {
         if (inputActions == null)
         {
-            Debug.LogWarning($"{nameof(RcCarInputSystemPlayer)}: 请指定 Input Actions 资源。", this);
+            LogClass.LogWarning(GameLogCategory.RcCar, $"{nameof(RcCarInputSystemPlayer)}: 请指定 Input Actions 资源。");
             return;
         }
 
         _playerMap = inputActions.FindActionMap("Player");
         if (_playerMap == null)
         {
-            Debug.LogError($"{nameof(RcCarInputSystemPlayer)}: 未找到 Player 地图。", this);
+            LogClass.LogError(GameLogCategory.RcCar, $"{nameof(RcCarInputSystemPlayer)}: 未找到 Player 地图。");
             return;
         }
 
@@ -46,9 +46,9 @@ public class RcCarInputSystemPlayer : MonoBehaviour
         _sprint = _playerMap.FindAction("Sprint");
         _reverse = _playerMap.FindAction("Reverse");
         if (_move == null || _sprint == null)
-            Debug.LogError($"{nameof(RcCarInputSystemPlayer)}: Player 需包含 Move、Sprint。", this);
+            LogClass.LogError(GameLogCategory.RcCar, $"{nameof(RcCarInputSystemPlayer)}: Player 需包含 Move、Sprint。");
         if (_reverse == null)
-            Debug.LogWarning($"{nameof(RcCarInputSystemPlayer)}: 未找到 Reverse 动作，倒车不可用（请在 Input Actions 中添加）。", this);
+            LogClass.LogWarning(GameLogCategory.RcCar, $"{nameof(RcCarInputSystemPlayer)}: 未找到 Reverse 动作，倒车不可用（请在 Input Actions 中添加）。");
 
         if (_sprint != null)
             _loggedSprintPrev = _sprint.IsPressed();
@@ -63,7 +63,7 @@ public class RcCarInputSystemPlayer : MonoBehaviour
             bool now = _sprint.IsPressed();
             if (now != _loggedSprintPrev)
             {
-                Debug.Log($"[RcCarInput] Sprint={(now ? "ON" : "OFF")}", this);
+                LogClass.LogGame(GameLogCategory.RcCar, $"[RcCarInput] Sprint={(now ? "ON" : "OFF")}");
                 _loggedSprintPrev = now;
             }
         }
@@ -73,7 +73,7 @@ public class RcCarInputSystemPlayer : MonoBehaviour
             bool now = _reverse.IsPressed();
             if (now != _loggedReversePrev)
             {
-                Debug.Log($"[RcCarInput] Reverse={(now ? "ON" : "OFF")}", this);
+                LogClass.LogGame(GameLogCategory.RcCar, $"[RcCarInput] Reverse={(now ? "ON" : "OFF")}");
                 _loggedReversePrev = now;
             }
         }

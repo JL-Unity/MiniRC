@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// 读 PlayerPrefs 的 "MiniRC_RcRace_BestTotal_{levelId}"（总完赛最佳，秒）。
 /// 未完成过的关显示 "--"。
 /// </summary>
-public class RcHighScorePanel : BasePanel
+public class RcHighScorePanel : BasePanel, IStartMenuPanelAnimation
 {
     const string PlayerPrefsBestKeyPrefix = "MiniRC_RcRace_BestTotal_";
     const string MissingRecordText = "--";
@@ -39,6 +39,25 @@ public class RcHighScorePanel : BasePanel
         ApplyBestTime(level1Id, level1TimeLabel);
         ApplyBestTime(level2Id, level2TimeLabel);
         ApplyBestTime(level3Id, level3TimeLabel);
+        PlayOpenAnimation();
+    }
+
+    public void PlayOpenAnimation()
+    {
+        PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultOpenClipName);
+    }
+
+    public void PlayCloseAnimation()
+    {
+        if (!PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultCloseClipName))
+        {
+            OnCloseAnimationComplete();
+        }
+    }
+
+    public void OnCloseAnimationComplete()
+    {
+        UIManager.GetInstance().PopPanel();
     }
 
     public override void OnPause() { }
@@ -47,7 +66,7 @@ public class RcHighScorePanel : BasePanel
 
     void OnBackClicked()
     {
-        UIManager.GetInstance().PopPanel();
+        PlayCloseAnimation();
     }
 
     static void ApplyBestTime(string levelId, Text label)

@@ -13,8 +13,9 @@ MonoBehaviour:
   m_Name: RcCar_Tank300
   m_EditorClassIdentifier: Assembly-CSharp::RcCarDefinition
   carId: 003
-  displayName: Tank300
-  carPrefab: {fileID: 0}
-  speedPercent: 50
-  driftPercent: 50
+  displayName: "\u4E0A\u5355300"
+  previewSprite: {fileID: -3933903695215632743, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
+  carPrefab: {fileID: 8431796612363434756, guid: f4103b1131901ef48bc12deb4cb25181, type: 3}
+  speedPercent: 60
   accelPercent: 50
+  gripPercent: 60
