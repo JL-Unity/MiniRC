@@ -390,7 +390,7 @@ MonoBehaviour:
   coastExtraDrag: 0.55
   longitudinalDragScale: 0.82
   wallContactWindow: 0.05
-  wallContactLateralGripFloor: 14
+  wallContactLateralGripFloor: 3
   brakeForce: 50
   continuousCollision: 1
   defaultGravityScale: 0
