@@ -20,6 +20,8 @@ public class RcCarRaceGameMode : GameMode
     [SerializeField] Transform levelAnchor;
     [Tooltip("可选：与车预制体内 Controller 一致的 UI 摇杆")]
     [SerializeField] Joystick uiJoystick;
+    [Tooltip("应用关卡 orthographicSize 的相机；留空则用 Camera.main")]
+    [SerializeField] Camera raceCamera;
 
     GameObject _levelInstance;
 
@@ -146,7 +148,32 @@ public class RcCarRaceGameMode : GameMode
                     fl.BindSessionAndCar(raceSession, rb.transform);
                 }
             }
+
+            ApplyLevelOrthographicSize(root);
         }
+    }
+
+    void ApplyLevelOrthographicSize(RcRaceLevelRoot root)
+    {
+        if (root == null)
+        {
+            return;
+        }
+
+        var cam = raceCamera != null ? raceCamera : Camera.main;
+        if (cam == null)
+        {
+            LogClass.LogWarning(GameLogCategory.System, "RcCarRaceGameMode: no Camera to apply level orthographicSize");
+            return;
+        }
+
+        if (!cam.orthographic)
+        {
+            LogClass.LogWarning(GameLogCategory.System, "RcCarRaceGameMode: race camera is not orthographic, skip orthographicSize");
+            return;
+        }
+
+        cam.orthographicSize = Mathf.Max(0.01f, root.LevelOrthographicSize);
     }
 
     void UnloadLevelInstance()

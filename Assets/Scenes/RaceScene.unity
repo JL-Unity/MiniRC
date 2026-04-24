@@ -518,7 +518,7 @@ Camera:
   far clip plane: 1000
   field of view: 34
   orthographic: 1
-  orthographic size: 12
+  orthographic size: 18
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
@@ -1522,6 +1522,7 @@ MonoBehaviour:
   carRoster: {fileID: 11400000, guid: d629e098163e7f14195e0255535b38f1, type: 2}
   levelAnchor: {fileID: 1754900022}
   uiJoystick: {fileID: 0}
+  raceCamera: {fileID: 0}
 --- !u!4 &1303594383
 Transform:
   m_ObjectHideFlags: 0

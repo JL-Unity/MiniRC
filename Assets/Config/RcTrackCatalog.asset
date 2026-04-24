@@ -21,4 +21,4 @@ MonoBehaviour:
     levelPrefab: {fileID: 6021051215966228193, guid: 14afcf88417fc8041993c732086e92e5, type: 3}
   - levelId: 003
     displayName: "\u5C71\u8DEF\u5341\u516B\u5F2F"
-    levelPrefab: {fileID: 0}
+    levelPrefab: {fileID: 5065641947236365197, guid: 978c4933d2fa1db4fbb532a70db650f0, type: 3}
