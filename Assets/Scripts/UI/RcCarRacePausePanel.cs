@@ -2,27 +2,19 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 暂停菜单：只负责把按钮接到 <see cref="RcCarRaceGameMode"/>，逻辑在 GameMode。
-/// 由 GameMode 在 <c>OnStart</c> 中调用 <see cref="Bind"/>（暂停根节点初始可能未激活，需用代码绑定）。
+/// 暂停面板：由 <see cref="RcCarRaceGameMode.TryPauseRace"/> 走 UIManager.PushPanel 推入；
+/// 按钮只转发到 GameMode 公开方法，不直接动 timeScale / Session。
 /// </summary>
-[DisallowMultipleComponent]
-public class RcCarRacePauseMenu2D : MonoBehaviour
+public class RcCarRacePausePanel : BasePanel
 {
     [SerializeField] Button continueButton;
     [SerializeField] Button restartButton;
     [SerializeField] Button exitButton;
 
-    RcCarRaceGameMode _mode;
-    bool _bound;
-    
-    public void Bind(RcCarRaceGameMode mode)
+    RcCarRaceGameMode Mode => GameManager.Instance?.GetGameMode() as RcCarRaceGameMode;
+
+    public override void OnEnter()
     {
-        if (_bound || mode == null)
-        {
-            return;
-        }
-        _bound = true;
-        _mode = mode;
         if (continueButton != null)
         {
             continueButton.onClick.AddListener(OnContinueClicked);
@@ -37,12 +29,8 @@ public class RcCarRacePauseMenu2D : MonoBehaviour
         }
     }
 
-    void OnDestroy()
+    public override void OnExit()
     {
-        if (!_bound)
-        {
-            return;
-        }
         if (continueButton != null)
         {
             continueButton.onClick.RemoveListener(OnContinueClicked);
@@ -57,9 +45,13 @@ public class RcCarRacePauseMenu2D : MonoBehaviour
         }
     }
 
-    void OnContinueClicked() => _mode?.ResumeRace();
+    public override void OnPause() { }
 
-    void OnRestartClicked() => _mode?.RestartRaceFromPauseMenu();
+    public override void OnResume() { }
 
-    void OnExitClicked() => _mode?.ExitRace();
+    void OnContinueClicked() => Mode?.ResumeRace();
+
+    void OnRestartClicked() => Mode?.RestartRaceFromPauseMenu();
+
+    void OnExitClicked() => Mode?.ExitRace();
 }

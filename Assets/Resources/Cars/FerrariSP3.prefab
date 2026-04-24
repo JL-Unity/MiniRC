@@ -140,7 +140,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.32448545, w: 0.9458907}
   m_LocalPosition: {x: -26.141, y: -20.41, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 1}
+  m_LocalScale: {x: 0.18, y: 0.18, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7605032756563672086}
@@ -307,25 +307,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 3007672500224789844}
-  accelerationForce: 20
-  maxForwardSpeed: 38
+  accelerationForce: 22
+  maxForwardSpeed: 43
   maxReverseSpeed: 4
   reverseAcceRate: 0.55
   maxSteerAngleDeg: 180
-  steerAngleFollowSpeedDeg: 350
-  steerAngleReleaseSpeedDeg: 1100
-  maxYawRateDeg: 550
+  steerAngleFollowSpeedDeg: 400
+  steerAngleReleaseSpeedDeg: 900
+  maxYawRateDeg: 630
   steerSpeedForFullTurn: 3
   steerTurnFactorAtRest: 1
   steerTurnFactorAtRefSpeed: 0.7
   steerThrottleTurnWeight: 0.6
   steerOmegaGain: 14
-  steerReleaseYawGain: 26
-  lateralGripStraight: 3
-  lateralGripTurning: 1.2
+  steerReleaseYawGain: 18
+  lateralGripStraight: 2.7
+  lateralGripTurning: 1
   lateralSteerSlipPower: 1.1
   lateralThrottleDrift: 4
-  forwardDrag: 2.8
+  forwardDrag: 2.6
   coastExtraDrag: 0.55
   longitudinalDragScale: 0.82
   wallContactWindow: 0.05

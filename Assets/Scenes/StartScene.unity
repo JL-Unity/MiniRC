@@ -577,7 +577,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd01933e540c6eb49b310b105b14a3a6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameManager
-  uiCanvasRoot: {fileID: 1338125749}
   defaultLevelId: 001
   raceSceneAsset: {fileID: 11400000, guid: 59b9679bc96819a4781ac64e795243f1, type: 2}
   mainMenuSceneAsset: {fileID: 11400000, guid: e3b47c2a91854f36b9d01ac5f73e8810, type: 2}
@@ -887,8 +886,9 @@ GameObject:
   - component: {fileID: 1338125748}
   - component: {fileID: 1338125747}
   - component: {fileID: 1338125746}
+  - component: {fileID: 1338125750}
   m_Layer: 5
-  m_Name: MainMenuRoot
+  m_Name: UIRoot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -977,6 +977,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
+--- !u!114 &1338125750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1338125745}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9f4eeabdb6ed0f64c9457ef4f9fb10e9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UiCanvasBootstrap
 --- !u!1 &1394204484
 GameObject:
   m_ObjectHideFlags: 0

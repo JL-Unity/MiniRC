@@ -15,6 +15,10 @@ public class RcRaceLevelRoot : MonoBehaviour
     [Tooltip("进入本关时由 GameMode 写入赛车用 Camera.orthographicSize（须为正交相机）")]
     [SerializeField] float levelOrthographicSize = 5f;
 
+    [Header("规则")]
+    [Tooltip("本关总圈数，驱动 HUD 圈数行数量与 Session 计时终点判定")]
+    [SerializeField, Range(1, 5)] int lapCount = 3;
+
     void Awake()
     {
         ResolveCarSpawn();
@@ -46,6 +50,9 @@ public class RcRaceLevelRoot : MonoBehaviour
 
     /// <summary>本关期望的正交视野半高（世界单位），对应 <see cref="Camera.orthographicSize"/>。</summary>
     public float LevelOrthographicSize => levelOrthographicSize;
+
+    /// <summary>本关总圈数（1~5），由 GameMode 推给 Session 用于 HUD 初始化与计时。</summary>
+    public int LapCount => Mathf.Clamp(lapCount, 1, 5);
 
     public RcCarFinishLine2D[] GetFinishLinesInLevel()
     {

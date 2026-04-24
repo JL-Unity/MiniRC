@@ -1,17 +1,19 @@
-﻿using UnityEngine;
-using UnityEngine.UI;
+﻿using System;
+using UnityEngine;
 
 /// <summary>
 /// RC 计时赛 GameMode：暂停/结算/再来一局；Race 场景内按 GameManager 选关选车实例化关卡与车辆。
+/// UI 已拆分为 <see cref="RcCarRaceHud"/>（常驻）+ <see cref="RcCarRacePausePanel"/>、<see cref="RcCarRaceResultPanel"/>（UIManager Push/Pop）。
 /// </summary>
 [DisallowMultipleComponent]
 public class RcCarRaceGameMode : GameMode
 {
     const string PlayerPrefsBestKeyPrefix = "MiniRC_RcRace_BestTotal_";
+    const string PausePanelName = PanelPath.GamePath + "RcCarRacePausePanel";
+    const string ResultPanelName = PanelPath.GamePath + "RcCarRaceResultPanel";
 
     [SerializeField] RcCarRaceSession2D raceSession;
-    [SerializeField] GameObject pauseMenuRoot;
-    [SerializeField] Button resultPlayAgainButton;
+    [SerializeField] RcCarRaceHud raceHud;
     [SerializeField] string trackId = "001";
 
     [Header("关卡 / 车辆（菜单写入 GameManager，进入 Race 后实例化；留空则沿用场景中已拖引用）")]
@@ -24,6 +26,18 @@ public class RcCarRaceGameMode : GameMode
     [SerializeField] Camera raceCamera;
 
     GameObject _levelInstance;
+    bool _pausedFromRace;
+    Action<RaceFinishedMessage> _onRaceFinished;
+
+    public struct RaceResult
+    {
+        public float Total;
+        public float BestShown;
+        public bool NewRecord;
+    }
+
+    /// <summary>最近一次 EndRace 的成绩；ResultPanel.OnEnter 读取。</summary>
+    public RaceResult LastRaceResult { get; private set; }
 
     string BestPrefsKey => PlayerPrefsBestKeyPrefix + trackId;
 
@@ -45,24 +59,18 @@ public class RcCarRaceGameMode : GameMode
         bestShownSeconds = newRecord ? totalSeconds : prevBestRounded;
     }
 
-    bool _pausedFromRace;
-
     protected override void OnStart()
     {
         base.OnStart();
+
+        _onRaceFinished = OnRaceFinished;
+        EventCenter.GetInstance().Subscribe(_onRaceFinished);
+
         TryInitializeRaceFromGameManager();
 
-        if (pauseMenuRoot != null)
+        if (raceHud != null)
         {
-            pauseMenuRoot.SetActive(false);
-            var pauseUi = pauseMenuRoot.GetComponent<RcCarRacePauseMenu2D>()
-                ?? pauseMenuRoot.GetComponentInChildren<RcCarRacePauseMenu2D>(true);
-            pauseUi?.Bind(this);
-        }
-
-        if (resultPlayAgainButton != null)
-        {
-            resultPlayAgainButton.onClick.AddListener(PlayAgainFromResult);
+            raceHud.Bind(raceSession, this);
         }
     }
 
@@ -132,6 +140,7 @@ public class RcCarRaceGameMode : GameMode
             return;
         }
 
+        raceSession.ConfigureLaps(root.LapCount);
         raceSession.BindPlayerCar(rb, ctrl, inp, uiJoystick);
 
         if (root != null && root.FinishTrigger != null)
@@ -185,6 +194,17 @@ public class RcCarRaceGameMode : GameMode
         }
     }
 
+    void OnRaceFinished(RaceFinishedMessage msg)
+    {
+        LastRaceResult = new RaceResult
+        {
+            Total = msg.TotalTime,
+            BestShown = msg.BestShownTime,
+            NewRecord = msg.NewRecord,
+        };
+        UIManager.GetInstance().PushPanel(ResultPanelName);
+    }
+
     /// <summary>结算面板上「再来一局」：仅复位 Session，不涉及暂停菜单。</summary>
     public void PlayAgainFromResult()
     {
@@ -200,10 +220,7 @@ public class RcCarRaceGameMode : GameMode
         }
 
         _pausedFromRace = false;
-        if (pauseMenuRoot != null)
-        {
-            pauseMenuRoot.SetActive(false);
-        }
+        UIManager.GetInstance().PopPanel();
         ResumeGame();
         raceSession?.ResetRaceToWaitingAtSpawn();
     }
@@ -214,10 +231,7 @@ public class RcCarRaceGameMode : GameMode
         if (_pausedFromRace)
         {
             _pausedFromRace = false;
-            if (pauseMenuRoot != null)
-            {
-                pauseMenuRoot.SetActive(false);
-            }
+            UIManager.GetInstance().PopPanel();
             ResumeGame();
         }
 
@@ -234,24 +248,21 @@ public class RcCarRaceGameMode : GameMode
         }
     }
 
-    /// <summary>仅在比赛中生效；已暂停时重复调用无效。</summary>
+    /// <summary>允许 <see cref="RcCarRaceSession2D.CanPause"/> 的阶段打开暂停面板；已暂停时无操作。</summary>
     public void TryPauseRace()
     {
         if (_pausedFromRace)
         {
             return;
         }
-        if (raceSession == null || !raceSession.IsRacing)
+        if (raceSession == null || !raceSession.CanPause)
         {
             return;
         }
 
         _pausedFromRace = true;
         StopGame();
-        if (pauseMenuRoot != null)
-        {
-            pauseMenuRoot.SetActive(true);
-        }
+        UIManager.GetInstance().PushPanel(PausePanelName);
     }
 
     /// <summary>关闭暂停菜单并恢复 timeScale；非本模式触发的暂停不会执行任何操作。</summary>
@@ -263,10 +274,7 @@ public class RcCarRaceGameMode : GameMode
         }
 
         _pausedFromRace = false;
-        if (pauseMenuRoot != null)
-        {
-            pauseMenuRoot.SetActive(false);
-        }
+        UIManager.GetInstance().PopPanel();
         ResumeGame();
     }
 
@@ -279,13 +287,12 @@ public class RcCarRaceGameMode : GameMode
     protected override void M_OnDestroy()
     {
         UnloadLevelInstance();
-        if (resultPlayAgainButton != null)
-        {
-            resultPlayAgainButton.onClick.RemoveListener(PlayAgainFromResult);
-        }
+        EventCenter.GetInstance().Unsubscribe(_onRaceFinished);
         if (_pausedFromRace)
         {
-            ResumeRace();
+            // 离场前兜底恢复 timeScale；不走 PopPanel（场景切换时 UIManager.Clear 会清栈）
+            _pausedFromRace = false;
+            ResumeGame();
         }
         base.M_OnDestroy();
     }

@@ -31,7 +31,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.32448545, w: 0.9458907}
   m_LocalPosition: {x: -26.141, y: -20.41, z: 0}
-  m_LocalScale: {x: 0.15, y: 0.15, z: 1}
+  m_LocalScale: {x: 0.18, y: 0.18, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5794063050522622029}
@@ -165,7 +165,7 @@ MonoBehaviour:
   steerTurnFactorAtRefSpeed: 0.7
   steerThrottleTurnWeight: 0.6
   steerOmegaGain: 16
-  steerReleaseYawGain: 23
+  steerReleaseYawGain: 21
   lateralGripStraight: 2.8
   lateralGripTurning: 1.1
   lateralSteerSlipPower: 1.1

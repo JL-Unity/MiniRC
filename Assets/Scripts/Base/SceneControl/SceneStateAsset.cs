@@ -19,5 +19,8 @@ public class SceneStateAsset : State
     {
         base.ExitState();
         LogClass.LogGame(GameLogCategory.SceneStateController, "ExitState" + stateName);
+        // 旧场景 GameObject 此刻还活着：清掉 UIManager 栈、PoolManager 池、场景级事件订阅，
+        // 避免切场景后 PushPanel 触到上一场景被销毁的 BasePanel 引用。
+        GameManager.Instance?.Clear();
     }
 }

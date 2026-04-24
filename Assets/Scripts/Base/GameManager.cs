@@ -11,9 +11,6 @@ public class GameManager : MonoBehaviour
 
     private GameMode currentGameMode;
 
-    [SerializeField] [Tooltip("可选：主 UI Canvas；不填则 UIManager 内 Find(\"Canvas\")")]
-    private Transform uiCanvasRoot;
-
     [SerializeField] [Tooltip("不选择关卡的默认关卡id")]
     string defaultLevelId = "default";
 
@@ -139,9 +136,7 @@ public class GameManager : MonoBehaviour
     void Init()
     {
         PoolManager.GetInstance().Init();
-        UIManager ui = UIManager.GetInstance();
-        ui.SetCanvasRoot(uiCanvasRoot);
-        ui.Init();
+        UIManager.GetInstance().Init();
         TimerManager.GetInstance().Init();
         SkillManager.GetInstance().Init();
     }

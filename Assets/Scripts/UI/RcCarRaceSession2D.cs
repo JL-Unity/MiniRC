@@ -1,16 +1,14 @@
-using System;
 using System.Text;
 using UnityEngine;
-using UnityEngine.UI;
 
 /// <summary>
-/// 三圈计时：首次有输入时开始第 1 圈计时；每次过终点线记一圈（需离开终点后再进入下一圈）。
-/// 总成绩为三圈时间之和；结束后禁用车辆，「再来一局」复位初始位与状态，下次仍由首次输入再开表。
+/// 计时赛状态机与圈数数据：首次输入后开表、过终点逐圈计时、满圈后结算。
+/// 不持有任何 UI 引用——进度通过 EventCenter 广播，HUD 每帧读公开属性渲染。
 /// </summary>
 [DisallowMultipleComponent]
 public class RcCarRaceSession2D : MonoBehaviour
 {
-    [Header("车")]
+    [Header("车（正常流程动态赋值，在原场景测试可以直接拖）")]
     [SerializeField] Rigidbody2D carRigidbody;
     [SerializeField] RcCarController2D carController;
     [SerializeField] RcCarInputSystemPlayer inputPlayer;
@@ -18,28 +16,17 @@ public class RcCarRaceSession2D : MonoBehaviour
     [SerializeField] Joystick uiJoystick;
     [SerializeField] float inputDeadZone = 0.08f;
 
-    [Header("终点（用于判断首帧是否已在圈内，避免重复计圈）")]
+    [Header("终点线")]
     [SerializeField] Collider2D finishTrigger;
 
-    [Header("圈数")]
-    [SerializeField] int lapsPerRound = 3;
-
-    [Header("HUD · 左上角（拖带 Text 的物体或 Text 组件；Text 在子物体上也可）")]
-    [SerializeField] Component hudLap1Line;
-    [SerializeField] Component hudLap2Line;
-    [SerializeField] Component hudLap3Line;
-    [SerializeField] Component hudTotalLine;
-
-    [Header("结束面板")]
-    [SerializeField] GameObject resultPanelRoot;
-    [SerializeField] Component resultCurrentLine;
-    [SerializeField] Component resultBestLine;
+    [Header("圈数（正常流程动态赋值，在原场景测试可以直接改）")]
+    [SerializeField, Range(1, 5)] int lapsPerRound = 3;
 
     Vector3 _spawnPosition;
     Quaternion _spawnRotation;
     float[] _lapTimes;
 
-    enum SessionState
+    public enum SessionState
     {
         WaitingFirstInput,
         Racing,
@@ -55,21 +42,43 @@ public class RcCarRaceSession2D : MonoBehaviour
 
     public bool IsPlayerBound => _playerBound;
 
-    /// <summary>是否处于计时赛进行中（可用于 GameMode 判断是否允许暂停）。</summary>
+    /// <summary>是否处于计时赛进行中。</summary>
     public bool IsRacing => _state == SessionState.Racing;
 
-    static Type _tmpUguiType;
+    /// <summary>是否允许打开暂停菜单：等待首帧输入或比赛中都可，已结束不可。</summary>
+    public bool CanPause => _state != SessionState.Finished;
 
-    static Type TmpUguiType
+    public SessionState State => _state;
+    public int LapsPerRound => lapsPerRound;
+    public int LapsCompleted => _lapsCompleted;
+
+    /// <summary>当前未封存圈已进行的秒数；仅在 Racing 时返回实时值，其余为 0。</summary>
+    public float CurrentLapElapsed
     {
         get
         {
-            if (_tmpUguiType == null)
+            if (_state != SessionState.Racing)
             {
-                _tmpUguiType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro");
+                return 0f;
             }
-            return _tmpUguiType;
+            if (_lapsCompleted >= lapsPerRound)
+            {
+                return 0f;
+            }
+            return Time.time - _lapStartTime;
         }
+    }
+
+    /// <summary>已过圈累加 + 当前圈实时耗时；结束后固定为最终总时间。</summary>
+    public float TotalElapsed => ComputeTotalElapsedIncludingCurrentLap();
+
+    public float GetLapTime(int lapIndex)
+    {
+        if (_lapTimes == null || lapIndex < 0 || lapIndex >= _lapTimes.Length)
+        {
+            return 0f;
+        }
+        return _lapTimes[lapIndex];
     }
 
     void Awake()
@@ -81,14 +90,17 @@ public class RcCarRaceSession2D : MonoBehaviour
             _playerBound = true;
         }
 
-        _lapTimes = new float[Mathf.Max(1, lapsPerRound)];
+        ConfigureLaps(lapsPerRound);
+    }
 
-        if (resultPanelRoot != null)
-        {
-            resultPanelRoot.SetActive(false);
-        }
+    /// <summary>按关卡圈数设置 <see cref="lapsPerRound"/> 与 <see cref="_lapTimes"/>，并广播 <see cref="RaceLapsConfiguredMessage"/>。</summary>
+    public void ConfigureLaps(int lapCount)
+    {
+        lapCount = Mathf.Clamp(lapCount, 1, 5);
+        lapsPerRound = lapCount;
+        _lapTimes = new float[lapCount];
 
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceLapsConfiguredMessage(lapCount));
     }
 
     void Update()
@@ -108,11 +120,6 @@ public class RcCarRaceSession2D : MonoBehaviour
             {
                 BeginRaceFromFirstInput();
             }
-        }
-
-        if (_state == SessionState.Racing && !IsGameplayPaused())
-        {
-            UpdateHudLive();
         }
     }
 
@@ -146,7 +153,7 @@ public class RcCarRaceSession2D : MonoBehaviour
             _finishArmed = true;
         }
 
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceStartedMessage());
     }
 
     bool HasAnyInput()
@@ -210,12 +217,7 @@ public class RcCarRaceSession2D : MonoBehaviour
             carController.enabled = true;
         }
 
-        if (resultPanelRoot != null)
-        {
-            resultPanelRoot.SetActive(false);
-        }
-
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceResetMessage());
     }
 
     /// <summary>关卡预制体提供的终点触发器。</summary>
@@ -249,14 +251,15 @@ public class RcCarRaceSession2D : MonoBehaviour
         dt = RoundToHundredths(dt);
         _lapStartTime = now;
 
-        if (_lapsCompleted < _lapTimes.Length)
+        int lapIndex = _lapsCompleted;
+        if (lapIndex < _lapTimes.Length)
         {
-            _lapTimes[_lapsCompleted] = dt;
+            _lapTimes[lapIndex] = dt;
         }
         _lapsCompleted++;
         _finishArmed = false;
 
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceLapCompletedMessage(lapIndex, dt));
 
         if (_lapsCompleted >= lapsPerRound)
         {
@@ -297,22 +300,15 @@ public class RcCarRaceSession2D : MonoBehaviour
         }
 
         float total = RoundToHundredths(ComputeTotalElapsedIncludingCurrentLap());
-
         float bestShown = total;
+        bool newRecord = false;
         if (GameManager.Instance != null
             && GameManager.Instance.GetGameMode() is RcCarRaceGameMode rcMode)
         {
-            rcMode.ResolveBestTotal(total, out bestShown, out _);
+            rcMode.ResolveBestTotal(total, out bestShown, out newRecord);
         }
 
-        if (resultPanelRoot != null)
-        {
-            resultPanelRoot.SetActive(true);
-        }
-        SetUIText(resultCurrentLine, "本次成绩： " + FormatTime(total));
-        SetUIText(resultBestLine, "最好成绩： " + FormatTime(bestShown));
-
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceFinishedMessage(total, bestShown, newRecord));
     }
 
     /// <summary>由 <see cref="RcCarRaceGameMode"/> 在「再来一局」或暂停内重开时调用。</summary>
@@ -321,10 +317,6 @@ public class RcCarRaceSession2D : MonoBehaviour
         if (!_playerBound)
         {
             return;
-        }
-        if (resultPanelRoot != null)
-        {
-            resultPanelRoot.SetActive(false);
         }
 
         ResetCarToSpawn();
@@ -342,7 +334,7 @@ public class RcCarRaceSession2D : MonoBehaviour
             carController.enabled = true;
         }
 
-        RefreshHud();
+        EventCenter.GetInstance().Publish(new RaceResetMessage());
     }
 
     void ResetCarToSpawn()
@@ -357,24 +349,6 @@ public class RcCarRaceSession2D : MonoBehaviour
         carRigidbody.angularVelocity = 0f;
     }
 
-    void UpdateHudLive()
-    {
-        if (_state != SessionState.Racing)
-        {
-            return;
-        }
-
-        ApplyLapHudTexts();
-
-        if (hudTotalLine == null)
-        {
-            return;
-        }
-
-        float sum = ComputeTotalElapsedIncludingCurrentLap();
-        SetUIText(hudTotalLine, "合计： " + FormatTime(sum));
-    }
-
     float ComputeTotalElapsedIncludingCurrentLap()
     {
         float sum = 0f;
@@ -384,7 +358,10 @@ public class RcCarRaceSession2D : MonoBehaviour
             {
                 sum += _lapTimes[i];
             }
-            sum += Time.time - _lapStartTime;
+            if (_state == SessionState.Racing)
+            {
+                sum += Time.time - _lapStartTime;
+            }
         }
         else
         {
@@ -397,110 +374,9 @@ public class RcCarRaceSession2D : MonoBehaviour
         return sum;
     }
 
-    void RefreshHud()
-    {
-        ApplyLapHudTexts();
-
-        if (hudTotalLine == null)
-        {
-            return;
-        }
-
-        if (_state == SessionState.WaitingFirstInput)
-        {
-            SetUIText(hudTotalLine, "合计： --");
-        }
-        else
-        {
-            SetUIText(hudTotalLine, "合计： " + FormatTime(ComputeTotalElapsedIncludingCurrentLap()));
-        }
-    }
-
-    void ApplyLapHudTexts()
-    {
-        SetLapHudOne(hudLap1Line, 0);
-        SetLapHudOne(hudLap2Line, 1);
-        SetLapHudOne(hudLap3Line, 2);
-    }
-
-    void SetLapHudOne(Component label, int index)
-    {
-        if (label == null)
-        {
-            return;
-        }
-        if (index >= lapsPerRound)
-        {
-            SetUIText(label, "");
-            return;
-        }
-
-        SetUIText(label, BuildLapLineText(index));
-    }
-
-    string BuildLapLineText(int index)
-    {
-        if (_state == SessionState.WaitingFirstInput)
-        {
-            return $"第{index + 1}圈： --";
-        }
-
-        if (index < _lapsCompleted)
-        {
-            return $"第{index + 1}圈： {FormatTime(_lapTimes[index])}";
-        }
-
-        if (_state == SessionState.Racing && index == _lapsCompleted && _lapsCompleted < lapsPerRound)
-        {
-            float elapsed = Time.time - _lapStartTime;
-            return $"第{index + 1}圈： {FormatTime(elapsed)}";
-        }
-
-        return $"第{index + 1}圈： --";
-    }
-
     public static float RoundToHundredths(float seconds)
     {
         return Mathf.Round(seconds * 100f) / 100f;
-    }
-
-    /// <summary>写 uGUI <see cref="Text"/>（含子物体上的 Text）；若装了 TMP 则顺带支持。</summary>
-    static void SetUIText(Component c, string value)
-    {
-        if (c == null)
-        {
-            return;
-        }
-
-        if (c is Text leg)
-        {
-            leg.text = value;
-            return;
-        }
-
-        var go = c.gameObject;
-        var ugui = go.GetComponent<Text>() ?? go.GetComponentInChildren<Text>(true);
-        if (ugui != null)
-        {
-            ugui.text = value;
-            return;
-        }
-
-        var tmpType = TmpUguiType;
-        if (tmpType == null)
-        {
-            return;
-        }
-
-        var tmp = go.GetComponent(tmpType) ?? go.GetComponentInChildren(tmpType, true);
-        if (tmp != null)
-        {
-            tmpType.GetProperty("text")?.SetValue(tmp, value);
-        }
-        else if (tmpType.IsInstanceOfType(c))
-        {
-            tmpType.GetProperty("text")?.SetValue(c, value);
-        }
     }
 
     /// <summary>显示到 0.01 秒（百分之一秒），与 <see cref="RoundToHundredths"/> 一致。</summary>

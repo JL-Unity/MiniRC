@@ -3,8 +3,8 @@ using UnityEngine;
 
 /// <summary>
 /// UI 栈 + 对象池（纯 C# 单例，不挂 Mono）。
-/// Canvas 引用须由 <see cref="SetCanvasRoot"/> 从 <b>MonoBehaviour</b>（如 GameManager）在 Init 前注入；
-/// 未注入时首次使用 <see cref="CanvasTransform"/> 会 <c>Find("Canvas")</c> 并缓存。
+/// Canvas 引用须由场景内的 <see cref="UiCanvasBootstrap"/> 在 Start 时通过 <see cref="SetCanvasRoot"/> 注入；
+/// 未注入时 <see cref="PushPanel"/> 会打 warning 并返回 null，不做任何 Find 兜底。
 /// </summary>
 public class UIManager : BaseManager<UIManager>
 {
@@ -14,7 +14,7 @@ public class UIManager : BaseManager<UIManager>
 
     public GameObject currentPanel { get; private set; }
 
-    /// <summary>由 GameManager 等 Mono 在 Awake/Init 里赋值；传 null 表示走 Find。</summary>
+    /// <summary>场景内 <see cref="UiCanvasBootstrap"/> 在 Start 时调用；切场景后旧 Canvas 被销毁，此处会被新场景 Bootstrap 覆盖。</summary>
     public void SetCanvasRoot(Transform canvasRoot)
     {
         _canvasRoot = canvasRoot;
@@ -22,17 +22,12 @@ public class UIManager : BaseManager<UIManager>
 
     private Transform ResolveCanvasRoot()
     {
-        if (_canvasRoot != null)
+        // 场景切换后旧 Canvas 会被销毁，Unity 的 == null 能识别 fake-null；此时返回 null 让调用方打 warning
+        if (_canvasRoot == null)
         {
-            return _canvasRoot;
+            _canvasRoot = null;
+            return null;
         }
-
-        GameObject go = GameObject.Find("Canvas");
-        if (go != null)
-        {
-            _canvasRoot = go.transform;
-        }
-
         return _canvasRoot;
     }
 
@@ -115,6 +110,7 @@ public class UIManager : BaseManager<UIManager>
             return null;
         }
 
+        DiscardDestroyedTop();
         if (_panelStack.Count > 0)
         {
             BasePanel topPanel = _panelStack.Peek();
@@ -138,11 +134,15 @@ public class UIManager : BaseManager<UIManager>
         }
 
         BasePanel topPanel = _panelStack.Pop();
-        topPanel.OnExit();
-        PoolManager.GetInstance().PushObj(topPanel.panelName, topPanel.gameObject);
+        // 跨场景后 topPanel 可能已随旧 Canvas 销毁变 fake-null，直接丢弃不走 OnExit/PushObj
+        if (topPanel != null)
+        {
+            topPanel.OnExit();
+            PoolManager.GetInstance().PushObj(topPanel.panelName, topPanel.gameObject);
+            LogClass.LogGame(GameLogCategory.UIManager, "topPanel Exit" + topPanel.name);
+        }
 
-        LogClass.LogGame(GameLogCategory.UIManager, "topPanel Exit" + topPanel.name);
-
+        DiscardDestroyedTop();
         if (_panelStack.Count > 0)
         {
             BasePanel panel = _panelStack.Peek();
@@ -162,6 +162,16 @@ public class UIManager : BaseManager<UIManager>
         while (_panelStack.Count > 0)
         {
             PopPanel();
+        }
+        currentPanel = null;
+    }
+
+    /// <summary>栈顶若是已销毁对象（fake-null）直接 Pop 丢弃，避免访问 MissingReference；连续丢到真实栈顶。</summary>
+    private void DiscardDestroyedTop()
+    {
+        while (_panelStack.Count > 0 && _panelStack.Peek() == null)
+        {
+            _panelStack.Pop();
         }
     }
 }

@@ -363,6 +363,17 @@
                 },
                 {
                     "name": "",
+                    "id": "a1c3e5f7-1234-4abc-8def-567890abcdef",
+                    "path": "<Keyboard>/upArrow",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Sprint",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "b8f4d012-3c55-502b-ad99-bb22cc33dd44",
                     "path": "<Gamepad>/buttonSouth",
                     "interactions": "",
@@ -398,6 +409,17 @@
                     "name": "",
                     "id": "d0e1f2a3-b4c5-4678-9abc-def012345678",
                     "path": "<Keyboard>/s",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "Reverse",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c2d4e6f8-2345-4bcd-9ef0-678901bcdef2",
+                    "path": "<Keyboard>/downArrow",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",
