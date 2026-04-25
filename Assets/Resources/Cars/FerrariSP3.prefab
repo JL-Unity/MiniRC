@@ -140,7 +140,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.32448545, w: 0.9458907}
   m_LocalPosition: {x: -26.141, y: -20.41, z: 0}
-  m_LocalScale: {x: 0.18, y: 0.18, z: 1}
+  m_LocalScale: {x: 0.2, y: 0.2, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7605032756563672086}
@@ -194,7 +194,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: 3927905558057155082, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -308,13 +308,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 3007672500224789844}
   accelerationForce: 22
-  maxForwardSpeed: 43
+  maxForwardSpeed: 42
   maxReverseSpeed: 4
   reverseAcceRate: 0.55
   maxSteerAngleDeg: 180
-  steerAngleFollowSpeedDeg: 400
+  steerAngleFollowSpeedDeg: 420
   steerAngleReleaseSpeedDeg: 900
-  maxYawRateDeg: 630
+  maxYawRateDeg: 650
   steerSpeedForFullTurn: 3
   steerTurnFactorAtRest: 1
   steerTurnFactorAtRefSpeed: 0.7
@@ -322,14 +322,14 @@ MonoBehaviour:
   steerOmegaGain: 14
   steerReleaseYawGain: 18
   lateralGripStraight: 2.7
-  lateralGripTurning: 1
+  lateralGripTurning: 0.95
   lateralSteerSlipPower: 1.1
   lateralThrottleDrift: 4
   forwardDrag: 2.6
   coastExtraDrag: 0.55
   longitudinalDragScale: 0.82
   wallContactWindow: 0.05
-  wallContactLateralGripFloor: 3
+  wallContactLateralGripFloor: 1.6
   brakeForce: 50
   continuousCollision: 1
   defaultGravityScale: 0

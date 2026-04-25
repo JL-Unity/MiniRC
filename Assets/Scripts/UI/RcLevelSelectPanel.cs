@@ -2,29 +2,92 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// 菜单第一步：选关卡。确认某一关后写入 <see cref="GameManager.SetPendingLevelId"/>，
-/// 再 <see cref="UIManager.PushPanel"/> 打开选车面板（Resources 路径名见 <see cref="carSelectPanelResourceName"/>）。
+/// 菜单第一步：左右切换在 <see cref="RcTrackCatalog"/> 内选关卡，样式对齐 <see cref="RcCarSelectPanel"/>。
+/// 确认后写入 <see cref="GameManager.SetPendingLevelId"/>，再 <see cref="UIManager.PushPanel"/> 打开选车面板。
 /// </summary>
 public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
 {
+    const string PlayerPrefsBestKeyPrefix = "MiniRC_RcRace_BestTotal_";
+    const string MissingRecordText = "--";
+
     [Header("关卡目录")]
     [SerializeField] RcTrackCatalog catalog;
 
     [Tooltip("与 PoolManager/UIManager 一致的 prefab 资源名（通常在 Resources 下）")]
     [SerializeField] string carSelectPanelResourceName = "RcCarSelectPanel";
 
-    [Header("与 catalog.tracks 顺序一一对应（几个关卡就拖几个按钮）")]
-    [SerializeField] Button[] levelButtons;
+    [Header("切换与显示")]
+    [SerializeField] Button prevLevelButton;
+    [SerializeField] Button nextLevelButton;
+    [SerializeField] Text levelNameText;
+    [SerializeField] Image levelPreviewImage;
+    [Tooltip("可选：显示当前关卡的最佳总成绩（PlayerPrefs 读取）")]
+    [SerializeField] Text bestTimeLabel;
 
-    [Tooltip("可选：与 levelButtons 同序，用于显示关卡名")]
-    [SerializeField] Text[] levelLabels;
-
+    [SerializeField] Button confirmButton;
     [SerializeField] Button backButton;
+
+    int _selectedIndex;
+
+    void Awake()
+    {
+        if (prevLevelButton != null)
+        {
+            prevLevelButton.onClick.AddListener(SelectPreviousLevel);
+        }
+
+        if (nextLevelButton != null)
+        {
+            nextLevelButton.onClick.AddListener(SelectNextLevel);
+        }
+
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.AddListener(OnConfirmLevelChosen);
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.AddListener(OnBackClicked);
+        }
+    }
+
+    void OnDestroy()
+    {
+        if (prevLevelButton != null)
+        {
+            prevLevelButton.onClick.RemoveListener(SelectPreviousLevel);
+        }
+
+        if (nextLevelButton != null)
+        {
+            nextLevelButton.onClick.RemoveListener(SelectNextLevel);
+        }
+
+        if (confirmButton != null)
+        {
+            confirmButton.onClick.RemoveListener(OnConfirmLevelChosen);
+        }
+
+        if (backButton != null)
+        {
+            backButton.onClick.RemoveListener(OnBackClicked);
+        }
+    }
 
     public override void OnEnter()
     {
-        BindButtonsIfNeeded();
-        RefreshLabels();
+        int count = catalog != null && catalog.tracks != null ? catalog.tracks.Length : 0;
+        if (count > 0)
+        {
+            _selectedIndex = Mathf.Clamp(_selectedIndex, 0, count - 1);
+        }
+        else
+        {
+            _selectedIndex = 0;
+        }
+
+        RefreshSelectionView();
         PlayOpenAnimation();
     }
 
@@ -51,72 +114,105 @@ public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
     public override void OnResume() { }
 
     public override void OnExit() { }
-    
+
     void OnBackClicked()
     {
         PlayCloseAnimation();
     }
 
-    void BindButtonsIfNeeded()
+    void SelectPreviousLevel()
     {
-        if (catalog == null || catalog.tracks == null || levelButtons == null)
-        {
-            return;
-        }
-        if (backButton != null) 
-        {
-            backButton.onClick.RemoveAllListeners();
-            backButton.onClick.AddListener(OnBackClicked);
-        }
-
-        for (int i = 0; i < levelButtons.Length; i++)
-        {
-            if (levelButtons[i] == null)
-            {
-                continue;
-            }
-            levelButtons[i].onClick.RemoveAllListeners();
-            if (i >= catalog.tracks.Length)
-            {
-                continue;
-            }
-
-            int idx = i;
-            levelButtons[i].onClick.AddListener(() => OnLevelChosen(idx));
-        }
-    }
-    
-    void RefreshLabels()
-    {
-        if (catalog?.tracks == null || levelLabels == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < levelLabels.Length && i < catalog.tracks.Length; i++)
-        {
-            if (levelLabels[i] == null)
-            {
-                continue;
-            }
-            var e = catalog.tracks[i];
-            if (e == null)
-            {
-                continue;
-            }
-            levelLabels[i].text = string.IsNullOrEmpty(e.displayName) ? e.levelId : e.displayName;
-        }
+        StepSelection(-1);
     }
 
-    /// <summary>玩家点某一关：记下关卡 id，再压入选车面板。</summary>
-    void OnLevelChosen(int trackIndex)
+    void SelectNextLevel()
     {
-        if (catalog?.tracks == null || trackIndex < 0 || trackIndex >= catalog.tracks.Length)
+        StepSelection(1);
+    }
+
+    void StepSelection(int delta)
+    {
+        if (catalog == null || catalog.tracks == null || catalog.tracks.Length <= 0)
         {
             return;
         }
 
-        var entry = catalog.tracks[trackIndex];
+        int n = catalog.tracks.Length;
+        _selectedIndex = ((_selectedIndex + delta) % n + n) % n;
+        RefreshSelectionView();
+    }
+
+    void RefreshSelectionView()
+    {
+        var entry = GetCurrentEntry();
+
+        if (levelNameText != null)
+        {
+            if (entry == null)
+            {
+                levelNameText.text = "";
+            }
+            else
+            {
+                levelNameText.text = string.IsNullOrEmpty(entry.displayName) ? entry.levelId : entry.displayName;
+            }
+        }
+
+        if (levelPreviewImage != null)
+        {
+            if (entry != null && entry.previewSprite != null)
+            {
+                levelPreviewImage.sprite = entry.previewSprite;
+                levelPreviewImage.enabled = true;
+            }
+            else
+            {
+                levelPreviewImage.sprite = null;
+                levelPreviewImage.enabled = false;
+            }
+        }
+
+        ApplyBestTime(entry);
+    }
+
+    void ApplyBestTime(RcTrackCatalog.TrackEntry entry)
+    {
+        if (bestTimeLabel == null)
+        {
+            return;
+        }
+
+        if (entry == null || string.IsNullOrEmpty(entry.levelId))
+        {
+            bestTimeLabel.text = MissingRecordText;
+            return;
+        }
+
+        float best = PlayerPrefs.GetFloat(PlayerPrefsBestKeyPrefix + entry.levelId, float.MaxValue);
+        bestTimeLabel.text = best >= float.MaxValue - 1f
+            ? MissingRecordText
+            : RcCarRaceSession2D.FormatTime(best);
+    }
+
+    RcTrackCatalog.TrackEntry GetCurrentEntry()
+    {
+        if (catalog == null || catalog.tracks == null || catalog.tracks.Length <= 0)
+        {
+            return null;
+        }
+
+        if (_selectedIndex < 0 || _selectedIndex >= catalog.tracks.Length)
+        {
+            return null;
+        }
+
+        return catalog.tracks[_selectedIndex];
+    }
+
+    /// <summary>确认当前关卡：记下关卡 id，再压入选车面板。</summary>
+    void OnConfirmLevelChosen()
+    {
+        var entry = GetCurrentEntry();
         if (entry == null || string.IsNullOrEmpty(entry.levelId))
         {
             return;
@@ -128,21 +224,5 @@ public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
         }
 
         UIManager.GetInstance().PushPanel(PanelPath.StartUpPath + carSelectPanelResourceName);
-    }
-
-    void OnDestroy()
-    {
-        if (backButton != null)
-        {
-            backButton.onClick.RemoveAllListeners();
-        }
-        for (int i = 0; i < levelButtons.Length; i++)
-        {
-            if (levelButtons[i] == null)
-            {
-                continue;
-            }
-            levelButtons[i].onClick.RemoveAllListeners();
-        }
     }
 }

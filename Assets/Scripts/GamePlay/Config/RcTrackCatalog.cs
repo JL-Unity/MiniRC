@@ -14,6 +14,8 @@ public class RcTrackCatalog : ScriptableObject
         [Tooltip("选关面板按钮上显示的名称；留空则用 levelId")]
         public string displayName;
         public GameObject levelPrefab;
+        [Tooltip("选关面板预览图；为空则隐藏预览 Image")]
+        public Sprite previewSprite;
     }
 
     public TrackEntry[] tracks;

@@ -16,9 +16,12 @@ MonoBehaviour:
   - levelId: 001
     displayName: "\u57FA\u7840\u5173\u5361"
     levelPrefab: {fileID: 0}
+    previewSprite: {fileID: 0}
   - levelId: 002
     displayName: "\u8FDB\u9636\u6311\u6218"
     levelPrefab: {fileID: 6021051215966228193, guid: 14afcf88417fc8041993c732086e92e5, type: 3}
+    previewSprite: {fileID: -4970737813276867543, guid: 3f45766258de6a94bb8def9252722155, type: 3}
   - levelId: 003
     displayName: "\u5C71\u8DEF\u5341\u516B\u5F2F"
     levelPrefab: {fileID: 5065641947236365197, guid: 978c4933d2fa1db4fbb532a70db650f0, type: 3}
+    previewSprite: {fileID: -1429091266864537898, guid: 5eb870accc5f6e045b331f4bdab1fe11, type: 3}

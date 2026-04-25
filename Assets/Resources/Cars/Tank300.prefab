@@ -247,7 +247,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.32448545, w: 0.9458907}
   m_LocalPosition: {x: -26.141, y: -20.41, z: 0}
-  m_LocalScale: {x: 0.25, y: 0.25, z: 1}
+  m_LocalScale: {x: 0.23, y: 0.23, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7254053334615261001}
@@ -301,7 +301,7 @@ SpriteRenderer:
   m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 2
+  m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -3933903695215632743, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
@@ -368,7 +368,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 8306255786263096577}
-  accelerationForce: 20
+  accelerationForce: 22
   maxForwardSpeed: 36
   maxReverseSpeed: 4
   reverseAcceRate: 0.65
@@ -383,8 +383,8 @@ MonoBehaviour:
   steerOmegaGain: 14
   steerReleaseYawGain: 26
   lateralGripStraight: 3.3
-  lateralGripTurning: 1.3
-  lateralSteerSlipPower: 1.1
+  lateralGripTurning: 1.6
+  lateralSteerSlipPower: 0.8
   lateralThrottleDrift: 4
   forwardDrag: 2.8
   coastExtraDrag: 0.55

@@ -711,7 +711,6 @@ GameObject:
   - component: {fileID: 6779947604097110256}
   - component: {fileID: 2390519362435859333}
   - component: {fileID: 1129958315430166810}
-  - component: {fileID: 3162792931850834562}
   m_Layer: 5
   m_Name: RcCarSelectPanel
   m_TagString: Untagged
@@ -787,24 +786,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!111 &3162792931850834562
-Animation:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3238813560186534515}
-  m_Enabled: 1
-  serializedVersion: 4
-  m_Animation: {fileID: 7400000, guid: 5b82cb370da84e84591c83e83674d7b4, type: 2}
-  m_Animations:
-  - {fileID: 7400000, guid: 5b82cb370da84e84591c83e83674d7b4, type: 2}
-  - {fileID: 7400000, guid: 325dae59b7030df4a987f18cafb123d3, type: 2}
-  m_WrapMode: 0
-  m_PlayAutomatically: 0
-  m_AnimatePhysics: 0
-  m_UpdateMode: 0
-  m_CullingType: 0
 --- !u!1 &3267426315942999026
 GameObject:
   m_ObjectHideFlags: 0
@@ -1656,7 +1637,7 @@ GameObject:
   - component: {fileID: 1589422680556238639}
   - component: {fileID: 5165411064459090344}
   m_Layer: 5
-  m_Name: CarImage
+  m_Name: CarPreview
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

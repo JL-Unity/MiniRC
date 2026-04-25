@@ -6,7 +6,7 @@ using UnityEngine.UI;
 /// 单套 Slider 进度条 + 车名/预览图；切换时用插值刷新进度以突出数值差异。
 /// 进入比赛场景由 <see cref="GameManager.EnterRaceFromCarSelect"/> 处理。
 /// </summary>
-public class RcCarSelectPanel : BasePanel, IStartMenuPanelAnimation
+public class RcCarSelectPanel : BasePanel
 {
     [SerializeField] RcCarRoster roster;
     [SerializeField] Button prevCarButton;
@@ -114,7 +114,7 @@ public class RcCarSelectPanel : BasePanel, IStartMenuPanelAnimation
 
     void OnBackToLevelSelect()
     {
-        PlayCloseAnimation();
+        UIManager.GetInstance().PopPanel();
     }
 
     void SelectPreviousCar()
@@ -159,25 +159,6 @@ public class RcCarSelectPanel : BasePanel, IStartMenuPanelAnimation
         _shownAccelPct = _targetAccelPct;
         ApplyStatBars(_shownSpeedPct, _shownGripPct, _shownAccelPct);
         RefreshNameAndPreview();
-        PlayOpenAnimation();
-    }
-
-    public void PlayOpenAnimation()
-    {
-        PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultOpenClipName);
-    }
-
-    public void PlayCloseAnimation()
-    {
-        if (!PanelAnimationUtil.TryPlayClip(GetComponent<Animation>(), PanelAnimationUtil.DefaultCloseClipName))
-        {
-            OnCloseAnimationComplete();
-        }
-    }
-
-    public void OnCloseAnimationComplete()
-    {
-        UIManager.GetInstance().PopPanel();
     }
 
     public override void OnPause() { }
