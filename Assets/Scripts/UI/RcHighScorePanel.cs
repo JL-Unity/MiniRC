@@ -66,6 +66,7 @@ public class RcHighScorePanel : BasePanel, IStartMenuPanelAnimation
 
     void OnBackClicked()
     {
+        AudioManager.GetInstance().PlayUiClose();
         PlayCloseAnimation();
     }
 

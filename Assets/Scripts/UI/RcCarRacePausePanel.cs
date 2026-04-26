@@ -49,9 +49,21 @@ public class RcCarRacePausePanel : BasePanel
 
     public override void OnResume() { }
 
-    void OnContinueClicked() => Mode?.ResumeRace();
+    void OnContinueClicked()
+    {
+        AudioManager.GetInstance().PlayUiClose();
+        Mode?.ResumeRace();
+    }
 
-    void OnRestartClicked() => Mode?.RestartRaceFromPauseMenu();
+    void OnRestartClicked()
+    {
+        AudioManager.GetInstance().PlayUiClick();
+        Mode?.RestartRaceFromPauseMenu();
+    }
 
-    void OnExitClicked() => Mode?.ExitRace();
+    void OnExitClicked()
+    {
+        AudioManager.GetInstance().PlayUiClose();
+        Mode?.ExitRace();
+    }
 }

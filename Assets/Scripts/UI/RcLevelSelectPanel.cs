@@ -117,16 +117,19 @@ public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
 
     void OnBackClicked()
     {
+        AudioManager.GetInstance().PlayUiClose();
         PlayCloseAnimation();
     }
 
     void SelectPreviousLevel()
     {
+        AudioManager.GetInstance().PlayUiClick();
         StepSelection(-1);
     }
 
     void SelectNextLevel()
     {
+        AudioManager.GetInstance().PlayUiClick();
         StepSelection(1);
     }
 
@@ -217,6 +220,8 @@ public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
         {
             return;
         }
+
+        AudioManager.GetInstance().PlayUiClick();
 
         if (GameManager.Instance != null)
         {

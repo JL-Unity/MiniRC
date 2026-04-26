@@ -9,10 +9,25 @@ public class SceneStateAsset : State
 {
     public string sceneName;
 
+    [Header("BGM · 可选")]
+    [Tooltip("Resources/ 下的相对路径（不带扩展名），例如 Audio/BGM/Menu；留空=不动当前 BGM")]
+    public string bgmResPath;
+    [Tooltip("勾上 = 进场时停掉 BGM（安静场景用）；优先级高于 bgmResPath")]
+    public bool stopBgmOnEnter;
+
     public override void EnterState(StateController controller)
     {
         base.EnterState(controller);
         LogClass.LogGame(GameLogCategory.SceneStateController, "EnterState" + stateName);
+
+        if (stopBgmOnEnter)
+        {
+            AudioManager.GetInstance().StopBGM();
+        }
+        else if (!string.IsNullOrEmpty(bgmResPath))
+        {
+            AudioManager.GetInstance().PlayBGM(bgmResPath);
+        }
     }
 
     public override void ExitState()

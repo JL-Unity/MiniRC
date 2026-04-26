@@ -92,10 +92,13 @@ public class SceneStateController: StateController
         {
             _asyncOperation.allowSceneActivation = false;
             StartCoroutine(processSceneLoading());
-            _loadingPanel = UIManager.GetInstance().PushPanel(loadingPanelName).GetComponent<LoadingPanel>();
-            if(_loadingPanel != null)
+            if(isNeedLoadingUI)
             {
-                _loadingPanel.SetLoadingProgress(0);
+                _loadingPanel = UIManager.GetInstance().PushPanel(loadingPanelName).GetComponent<LoadingPanel>();
+                if(_loadingPanel != null)
+                {
+                    _loadingPanel.SetLoadingProgress(0);
+                }
             }
         }
         else
@@ -142,7 +145,7 @@ public class SceneStateController: StateController
 
     public void ProcessLoadingUI(float rate)
     {
-        if(_loadingPanel != null)
+        if(isNeedLoadingUI && _loadingPanel != null)
         {
             _loadingPanel.SetLoadingProgress(rate);
         }

@@ -114,16 +114,19 @@ public class RcCarSelectPanel : BasePanel
 
     void OnBackToLevelSelect()
     {
+        AudioManager.GetInstance().PlayUiClose();
         UIManager.GetInstance().PopPanel();
     }
 
     void SelectPreviousCar()
     {
+        AudioManager.GetInstance().PlayUiClick();
         StepSelection(-1);
     }
 
     void SelectNextCar()
     {
+        AudioManager.GetInstance().PlayUiClick();
         StepSelection(1);
     }
 
@@ -241,6 +244,7 @@ public class RcCarSelectPanel : BasePanel
             return;
         }
 
+        AudioManager.GetInstance().PlayUiClick();
         GameManager.Instance.EnterRaceFromCarSelect(_selectedIndex);
     }
 }

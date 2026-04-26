@@ -110,6 +110,7 @@ public class RcCarRaceHud : MonoBehaviour
 
     void OnPauseClicked()
     {
+        AudioManager.GetInstance().PlayUiClick();
         _mode?.TryPauseRace();
     }
 

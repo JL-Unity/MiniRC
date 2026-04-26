@@ -22,6 +22,7 @@ public static class GameLogCategory
     public const string SceneStateController = "SceneStateController";
     public const string System = "System";
     public const string RcCar = "RcCar";
+    public const string Audio = "Audio";
 }
 
 public static class LogClass

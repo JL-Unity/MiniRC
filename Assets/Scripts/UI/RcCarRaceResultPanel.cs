@@ -68,6 +68,7 @@ public class RcCarRaceResultPanel : BasePanel
 
     void OnPlayAgainClicked()
     {
+        AudioManager.GetInstance().PlayUiClick();
         // 先关自己，再让 Mode 复位 Session（顺序无关紧要，但先 Pop 可以避免面板残留一帧）
         UIManager.GetInstance().PopPanel();
         Mode?.PlayAgainFromResult();

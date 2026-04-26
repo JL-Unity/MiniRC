@@ -13,18 +13,24 @@ public class RcStartMenu : MonoBehaviour
     [SerializeField] Button startButton;
     [SerializeField] Button creditsButton;
     [SerializeField] Button highScoreButton;
+    [SerializeField] Button instructionsButton;
+    [SerializeField] Button settingsButton;
     [SerializeField] Button quitButton;
 
     [Header("Resources 下的面板资源名（不带扩展名）")]
     [SerializeField] string levelSelectPanelName = "RcLevelSelectPanel";
     [SerializeField] string creditsPanelName = "RcCreditsPanel";
     [SerializeField] string highScorePanelName = "RcHighScorePanel";
+    [SerializeField] string instructionsPanelName = "RcInstructionsPanel";
+    [SerializeField] string settingsPanelName = "RcSettingsPanel";
 
     void Awake()
     {
         if (startButton != null) startButton.onClick.AddListener(OnStartClicked);
         if (creditsButton != null) creditsButton.onClick.AddListener(OnCreditsClicked);
         if (highScoreButton != null) highScoreButton.onClick.AddListener(OnHighScoreClicked);
+        if (settingsButton != null) settingsButton.onClick.AddListener(OnSettingsClicked);
+        if (instructionsButton != null) instructionsButton.onClick.AddListener(OnInstructionsClicked);
         if (quitButton != null) quitButton.onClick.AddListener(OnQuitClicked);
     }
 
@@ -33,21 +39,38 @@ public class RcStartMenu : MonoBehaviour
         if (startButton != null) startButton.onClick.RemoveListener(OnStartClicked);
         if (creditsButton != null) creditsButton.onClick.RemoveListener(OnCreditsClicked);
         if (highScoreButton != null) highScoreButton.onClick.RemoveListener(OnHighScoreClicked);
+        if (settingsButton != null) settingsButton.onClick.RemoveListener(OnSettingsClicked);
+        if (instructionsButton != null) instructionsButton.onClick.RemoveListener(OnInstructionsClicked);
         if (quitButton != null) quitButton.onClick.RemoveListener(OnQuitClicked);
+    }
+
+    void OnSettingsClicked()
+    {
+        AudioManager.GetInstance().PlayUiClick();
+        PushStartUpPanel(settingsPanelName);
+    }
+
+    void OnInstructionsClicked()
+    {
+        AudioManager.GetInstance().PlayUiClick();
+        PushStartUpPanel(instructionsPanelName);
     }
 
     void OnStartClicked()
     {
+        AudioManager.GetInstance().PlayUiClick();
         PushStartUpPanel(levelSelectPanelName);
     }
 
     void OnCreditsClicked()
     {
+        AudioManager.GetInstance().PlayUiClick();
         PushStartUpPanel(creditsPanelName);
     }
 
     void OnHighScoreClicked()
     {
+        AudioManager.GetInstance().PlayUiClick();
         PushStartUpPanel(highScorePanelName);
     }
 
@@ -59,6 +82,7 @@ public class RcStartMenu : MonoBehaviour
 
     void OnQuitClicked()
     {
+        AudioManager.GetInstance().PlayUiClose();
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #else

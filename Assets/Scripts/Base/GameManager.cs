@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
@@ -23,6 +24,14 @@ public class GameManager : MonoBehaviour
     [SerializeField]
     [Tooltip("退回主菜单 / Start 场景用的 SceneStateAsset（与进场对称，走 SceneStateController 时也会触发上一状态的 ExitState）")]
     SceneStateAsset mainMenuSceneAsset;
+
+    [Header("音频（跨场景持有；AudioSource 建议挂本物体子层以继承 DontDestroyOnLoad）")]
+    [Tooltip("暴露了 MasterVolume / BGMVolume / SFXVolume 的 AudioMixer 资产")]
+    [SerializeField] AudioMixer audioMixer;
+    [Tooltip("BGM 用 AudioSource（Output 指向 Mixer 的 BGM group，loop=true）；由 SceneStateAsset.EnterState 驱动播放")]
+    [SerializeField] AudioSource bgmSource;
+    [Tooltip("SFX 用 AudioSource（Output 指向 Mixer 的 SFX group，PlayOneShot 方式使用）")]
+    [SerializeField] AudioSource sfxSource;
 
     /// <summary>菜单 <see cref="SetPendingRaceIntent"/> 写入；Race 场景内消费。</summary>
     string _pendingLevelId;
@@ -133,12 +142,20 @@ public class GameManager : MonoBehaviour
         Init();
     }
 
+    void Start()
+    {
+        // Awake 里马上 SetFloat 到 Mixer 有时不生效（Unity 已知行为），这里在第一帧再 apply 一次
+        AudioManager.GetInstance().LoadAndApplySavedVolumes();
+    }
+
     void Init()
     {
         PoolManager.GetInstance().Init();
         UIManager.GetInstance().Init();
         TimerManager.GetInstance().Init();
         SkillManager.GetInstance().Init();
+        AudioManager.GetInstance().Init();
+        AudioManager.GetInstance().Configure(audioMixer, bgmSource, sfxSource);
     }
 
     public GameMode GetGameMode()

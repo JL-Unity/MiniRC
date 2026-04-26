@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "mcp__ide__getDiagnostics",
-      "Bash(find \"D:\\\\UnityHub\\\\Projects\\\\BeibeiGame\\\\Assets\" -name \"*.cs\" -type f -exec grep -l \"Canvas\" {} \\\\;)"
+      "Bash(find \"D:\\\\UnityHub\\\\Projects\\\\BeibeiGame\\\\Assets\" -name \"*.cs\" -type f -exec grep -l \"Canvas\" {} \\\\;)",
+      "Bash(py --version)",
+      "Bash(node D:/MiniRC/_gen_bgm.js)"
     ]
   }
 }

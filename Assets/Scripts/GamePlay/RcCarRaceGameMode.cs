@@ -24,6 +24,8 @@ public class RcCarRaceGameMode : GameMode
     [SerializeField] Joystick uiJoystick;
     [Tooltip("应用关卡 orthographicSize 的相机；留空则用 Camera.main")]
     [SerializeField] Camera raceCamera;
+    [Tooltip("胎痕段生成后挂载的父物体；建议在 Race 场景里放一个空物体 SkidLineRoot 拖进来，留空则段散在世界根")]
+    [SerializeField] Transform skidLineRoot;
 
     GameObject _levelInstance;
     bool _pausedFromRace;
@@ -142,6 +144,12 @@ public class RcCarRaceGameMode : GameMode
 
         raceSession.ConfigureLaps(root.LapCount);
         raceSession.BindPlayerCar(rb, ctrl, inp, uiJoystick);
+
+        var skidEmitter = carGo.GetComponent<RcCarSkidEmitter>();
+        if (skidEmitter != null && skidLineRoot != null)
+        {
+            skidEmitter.SetSegmentParent(skidLineRoot);
+        }
 
         if (root != null && root.FinishTrigger != null)
         {

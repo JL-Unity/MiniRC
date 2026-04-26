@@ -15,3 +15,5 @@ MonoBehaviour:
   stateName: StartMenuSceneState
   isEnter: 0
   sceneName: StartScene
+  bgmResPath: "Audio/BGM/\u5192\u9669\u5C9B\u5E9F\u5F03\u90FD\u5E02"
+  stopBgmOnEnter: 0

@@ -48,6 +48,7 @@ public class RcCreditsPanel : BasePanel, IStartMenuPanelAnimation
 
     void OnBackClicked()
     {
+        AudioManager.GetInstance().PlayUiClose();
         PlayCloseAnimation();
     }
 }
