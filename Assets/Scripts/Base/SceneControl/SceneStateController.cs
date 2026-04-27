@@ -121,10 +121,21 @@ public class SceneStateController: StateController
             ProcessLoadingUI(fakeRate);
             if (fakeRate >= 0.99f && rate >= 0.9999f && isAllowSceneChange)
             {
-                _asyncOperation.allowSceneActivation = true;
-                _currentState.EnterState(this);
-                _asyncOperation = null;
-                UIManager.GetInstance().PopPanel();
+                // 第一步：开闸 + 切 BGM。Unity 此后还要 1+ 帧才完成场景切换，
+                // LoadingPanel 必须继续遮着，否则玩家会看到上一场景的画面闪一下
+                if (!_asyncOperation.allowSceneActivation)
+                {
+                    _asyncOperation.allowSceneActivation = true;
+                    _currentState.EnterState(this);
+                }
+
+                // 第二步：等到新场景真正激活完（Awake/OnEnable/Start 都跑过 → isDone=true），
+                // 再 Pop LoadingPanel，玩家"揭开"看到的就是新场景第一帧
+                if (_asyncOperation.isDone)
+                {
+                    _asyncOperation = null;
+                    UIManager.GetInstance().PopPanel();
+                }
             }
         }
     }

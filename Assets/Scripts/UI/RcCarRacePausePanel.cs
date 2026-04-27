@@ -10,6 +10,7 @@ public class RcCarRacePausePanel : BasePanel
     [SerializeField] Button continueButton;
     [SerializeField] Button restartButton;
     [SerializeField] Button exitButton;
+    [SerializeField] Button settingsButton;
 
     RcCarRaceGameMode Mode => GameManager.Instance?.GetGameMode() as RcCarRaceGameMode;
 
@@ -27,6 +28,10 @@ public class RcCarRacePausePanel : BasePanel
         {
             exitButton.onClick.AddListener(OnExitClicked);
         }
+        if(settingsButton != null)
+        {
+            settingsButton.onClick.AddListener(OnSettingsClicked);
+        }
     }
 
     public override void OnExit()
@@ -42,6 +47,10 @@ public class RcCarRacePausePanel : BasePanel
         if (exitButton != null)
         {
             exitButton.onClick.RemoveListener(OnExitClicked);
+        }
+        if (settingsButton != null)
+        {
+            settingsButton.onClick.RemoveListener(OnSettingsClicked);
         }
     }
 
@@ -65,5 +74,11 @@ public class RcCarRacePausePanel : BasePanel
     {
         AudioManager.GetInstance().PlayUiClose();
         Mode?.ExitRace();
+    }
+
+    void OnSettingsClicked()
+    {
+        AudioManager.GetInstance().PlayUiClick();
+        UIManager.GetInstance().PushPanel(PanelPath.SettingsPanelName);
     }
 }

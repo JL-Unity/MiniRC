@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4657548ebfce7b4ab1fcc74fd5d17dc, type: 3}
+  m_Name: EngineVoiceTemplate
+  m_EditorClassIdentifier: Assembly-CSharp::RcCarEngineSoundProfile
+  lengthSeconds: 1
+  sampleRate: 44100
+  clipName: RcCarEngineLoop
+  baseFreq: 70
+  fundamentalGain: 0.07
+  h2Freq: 200
+  h2Gain: 0.02
+  h3Freq: 250
+  h3Gain: 0.07
+  amFreq: 40
+  amDepth: 0.03
+  noiseLpAlpha: 0.07
+  noiseGain: 0.01

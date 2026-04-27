@@ -12,6 +12,7 @@ public static class PanelPath
 {
     public const string StartUpPath = "UI/StartUp/";
     public const string GamePath = "UI/Game/";
+    public const string SettingsPanelName = "UI/StartUp/RcSettingsPanel";
 }
 
 /// <summary>游戏内日志分类字符串，避免与 UnityEngine.LogType 混淆。</summary>

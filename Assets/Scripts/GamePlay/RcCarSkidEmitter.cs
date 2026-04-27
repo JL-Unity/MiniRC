@@ -33,7 +33,7 @@ public class RcCarSkidEmitter : MonoBehaviour
     [Header("Emit Condition · 触发条件")]
     [Tooltip("侧向速度 |v·right| 大于此阈值才视为在漂（m/s）")]
     [SerializeField] float lateralSpeedThreshold = 2.5f;
-    [Tooltip("总速度（|v|）低于该值不生成；避免原地打舵刷一堆。用总速度而非车头方向分速，极端横滑时车头速分量会接近 0 导致胎痕中断")]
+    [Tooltip("总速度（|v|）低于该值不生成")]
     [SerializeField] float minSpeedToEmit = 1.0f;
     [Tooltip("轮子移动超过该距离才追加一个点（世界单位）；过小点数暴涨、过大曲线会有折角")]
     [SerializeField] float minPointDistance = 0.08f;
