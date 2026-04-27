@@ -187,14 +187,15 @@ public class RcLevelSelectPanel : BasePanel, IStartMenuPanelAnimation
 
         if (entry == null || string.IsNullOrEmpty(entry.levelId))
         {
-            bestTimeLabel.text = MissingRecordText;
+            bestTimeLabel.text = "最佳记录：" + MissingRecordText;
             return;
         }
 
         float best = PlayerPrefs.GetFloat(PlayerPrefsBestKeyPrefix + entry.levelId, float.MaxValue);
-        bestTimeLabel.text = best >= float.MaxValue - 1f
-            ? MissingRecordText
-            : RcCarRaceSession2D.FormatTime(best);
+        bestTimeLabel.text = "最佳记录：" +
+            (best >= float.MaxValue - 1f
+                ? MissingRecordText
+                : RcCarRaceSession2D.FormatTime(best));
     }
 
     RcTrackCatalog.TrackEntry GetCurrentEntry()

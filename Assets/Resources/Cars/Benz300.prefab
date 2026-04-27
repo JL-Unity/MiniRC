@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 6388043356506915922}
-  accelerationForce: 20
+  accelerationForce: 21
   maxForwardSpeed: 38
   maxReverseSpeed: 4
   reverseAcceRate: 0.55

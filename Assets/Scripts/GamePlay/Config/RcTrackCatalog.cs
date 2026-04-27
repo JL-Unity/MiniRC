@@ -36,4 +36,22 @@ public class RcTrackCatalog : ScriptableObject
 
         return null;
     }
+
+    /// <summary>按 levelId 查 entry。不要求 levelPrefab 非空（区别于 <see cref="GetLevelPrefab"/>），
+    /// 给只需要元数据（displayName / previewSprite）的 UI 用。</summary>
+    public TrackEntry GetEntry(string levelId)
+    {
+        if (tracks == null || string.IsNullOrEmpty(levelId))
+        {
+            return null;
+        }
+        foreach (var e in tracks)
+        {
+            if (e != null && e.levelId == levelId)
+            {
+                return e;
+            }
+        }
+        return null;
+    }
 }
