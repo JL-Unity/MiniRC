@@ -25,10 +25,10 @@ MonoBehaviour:
     displayName: "\u5316\u66F2\u4E3A\u76F4"
     levelPrefab: {fileID: 6021051215966228193, guid: 14afcf88417fc8041993c732086e92e5, type: 3}
     previewSprite: {fileID: 21300000, guid: 3f45766258de6a94bb8def9252722155, type: 3}
-    gradeSsMaxSeconds: 36
-    gradeSMaxSeconds: 37
-    gradeAMaxSeconds: 40
-    gradeBMaxSeconds: 45
+    gradeSsMaxSeconds: 34.5
+    gradeSMaxSeconds: 36
+    gradeAMaxSeconds: 38
+    gradeBMaxSeconds: 42
   - levelId: 003
     displayName: A B C D
     levelPrefab: {fileID: 5966142286933516044, guid: daac3cae4b3364946add77c49e19c423, type: 3}
