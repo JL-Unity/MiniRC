@@ -50,5 +50,8 @@ TagManager:
   - name: Decoration
     uniqueID: 2866447315
     locked: 0
+  - name: HUD
+    uniqueID: 3471264985
+    locked: 0
   m_RenderingLayers:
   - Default

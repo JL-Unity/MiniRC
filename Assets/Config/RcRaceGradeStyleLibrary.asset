@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea25089497a617d49b124091b3ab389f, type: 3}
+  m_Name: RcRaceGradeStyleLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::RcRaceGradeStyleLibrary
+  c:
+    sprite: {fileID: 4807593761789015204, guid: f992c75f8d0276a4ca5e632aa6853424, type: 3}
+    textColor: {r: 0.24705884, g: 0.64705884, b: 0, a: 1}
+  b:
+    sprite: {fileID: 2184022814161155132, guid: f992c75f8d0276a4ca5e632aa6853424, type: 3}
+    textColor: {r: 0.25490198, g: 0.81568635, b: 1, a: 1}
+  a:
+    sprite: {fileID: -79406642113698391, guid: f992c75f8d0276a4ca5e632aa6853424, type: 3}
+    textColor: {r: 0.86274517, g: 0.50980395, b: 1, a: 1}
+  s:
+    sprite: {fileID: -5606171707519059389, guid: f992c75f8d0276a4ca5e632aa6853424, type: 3}
+    textColor: {r: 1, g: 0.70980394, b: 0, a: 1}
+  ss:
+    sprite: {fileID: -3528475465878604386, guid: f992c75f8d0276a4ca5e632aa6853424, type: 3}
+    textColor: {r: 0.9568628, g: 0.04705883, b: 0, a: 1}

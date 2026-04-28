@@ -13,6 +13,14 @@ public class RcCarRaceResultPanel : BasePanel
     [Tooltip("破纪录时激活；非破纪录保持隐藏")]
     [SerializeField] GameObject newRecordIndicator;
     [SerializeField] Button playAgainButton;
+    [Tooltip("返回开始菜单按钮：交给 GameMode.ExitRace() 处理场景切换")]
+    [SerializeField] Button backToMenuButton;
+
+    [Header("等级图标视图")]
+    [Tooltip("本次成绩对应的等级图标视图")]
+    [SerializeField] RcRaceGradeIconView currentGradeView;
+    [Tooltip("最好成绩对应的等级图标视图")]
+    [SerializeField] RcRaceGradeIconView bestGradeView;
 
     static Type _tmpUguiType;
 
@@ -36,6 +44,10 @@ public class RcCarRaceResultPanel : BasePanel
         {
             playAgainButton.onClick.AddListener(OnPlayAgainClicked);
         }
+        if (backToMenuButton != null)
+        {
+            backToMenuButton.onClick.AddListener(OnBackToMenuClicked);
+        }
 
         var mode = Mode;
         if (mode != null)
@@ -47,6 +59,8 @@ public class RcCarRaceResultPanel : BasePanel
             {
                 newRecordIndicator.SetActive(r.NewRecord);
             }
+            if (currentGradeView != null) currentGradeView.SetGrade(r.CurrentGrade);
+            if (bestGradeView != null) bestGradeView.SetGrade(r.BestGrade);
         }
     }
 
@@ -56,10 +70,17 @@ public class RcCarRaceResultPanel : BasePanel
         {
             playAgainButton.onClick.RemoveListener(OnPlayAgainClicked);
         }
+        if (backToMenuButton != null)
+        {
+            backToMenuButton.onClick.RemoveListener(OnBackToMenuClicked);
+        }
         if (newRecordIndicator != null)
         {
             newRecordIndicator.SetActive(false);
         }
+        // 复位等级图标，避免面板复用时短暂闪现上一次等级
+        if (currentGradeView != null) currentGradeView.SetGrade(RcRaceGrade.None);
+        if (bestGradeView != null) bestGradeView.SetGrade(RcRaceGrade.None);
     }
 
     public override void OnPause() { }
@@ -72,6 +93,15 @@ public class RcCarRaceResultPanel : BasePanel
         // 先关自己，再让 Mode 复位 Session（顺序无关紧要，但先 Pop 可以避免面板残留一帧）
         UIManager.GetInstance().PopPanel();
         Mode?.PlayAgainFromResult();
+    }
+
+    void OnBackToMenuClicked()
+    {
+        AudioManager.GetInstance().PlayUiClose();
+        // 与「再来一局」一致：先关掉自己避免残留一帧，再让 Mode 走退出流程
+        // ExitRace 内部仅在 _pausedFromRace 时才会再 Pop，结算面板不在暂停态，不会重复出栈
+        UIManager.GetInstance().PopPanel();
+        Mode?.ExitRace();
     }
 
     static void SetUIText(Component c, string value)

@@ -85,8 +85,8 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -519095981
+  m_SortingLayer: 2
   m_SortingOrder: 5
   m_MaskInteraction: 0
   m_Sprite: {fileID: -255649592688716892, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
@@ -154,7 +154,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 6388043356506915922}
-  accelerationForce: 21
+  accelerationForce: 24
   maxForwardSpeed: 38
   maxReverseSpeed: 4
   reverseAcceRate: 0.55

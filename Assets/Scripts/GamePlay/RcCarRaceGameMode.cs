@@ -36,6 +36,8 @@ public class RcCarRaceGameMode : GameMode
         public float Total;
         public float BestShown;
         public bool NewRecord;
+        public RcRaceGrade CurrentGrade;
+        public RcRaceGrade BestGrade;
     }
 
     /// <summary>最近一次 EndRace 的成绩；ResultPanel.OnEnter 读取。</summary>
@@ -204,11 +206,21 @@ public class RcCarRaceGameMode : GameMode
 
     void OnRaceFinished(RaceFinishedMessage msg)
     {
+        // 等级评定基于配置阈值；trackCatalog 缺失时落在 None，UI 视图自然不显示
+        RcRaceGrade currentGrade = trackCatalog != null
+            ? trackCatalog.EvaluateGrade(trackId, msg.TotalTime)
+            : RcRaceGrade.None;
+        RcRaceGrade bestGrade = trackCatalog != null
+            ? trackCatalog.EvaluateGrade(trackId, msg.BestShownTime)
+            : RcRaceGrade.None;
+
         LastRaceResult = new RaceResult
         {
             Total = msg.TotalTime,
             BestShown = msg.BestShownTime,
             NewRecord = msg.NewRecord,
+            CurrentGrade = currentGrade,
+            BestGrade = bestGrade,
         };
         UIManager.GetInstance().PushPanel(ResultPanelName);
     }
