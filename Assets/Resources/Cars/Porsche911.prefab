@@ -216,13 +216,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RcCarController2D
   rb: {fileID: 4699939842998162632}
-  accelerationForce: 23
-  maxForwardSpeed: 40
+  accelerationForce: 19
+  maxForwardSpeed: 8.4
   maxReverseSpeed: 4
   reverseAcceRate: 0.55
   maxSteerAngleDeg: 180
   steerAngleFollowSpeedDeg: 380
-  steerAngleReleaseSpeedDeg: 1000
+  steerAngleReleaseSpeedDeg: 800
   maxYawRateDeg: 600
   steerSpeedForFullTurn: 3
   steerTurnFactorAtRest: 1
@@ -234,9 +234,9 @@ MonoBehaviour:
   lateralGripTurning: 1.1
   lateralSteerSlipPower: 1.1
   lateralThrottleDrift: 4
-  forwardDrag: 2.7
+  forwardDrag: 1.5
   coastExtraDrag: 0.55
-  longitudinalDragScale: 0.82
+  longitudinalDragScale: 0.75
   wallContactWindow: 0.05
   wallContactLateralGripFloor: 1.7
   brakeForce: 50
@@ -244,6 +244,7 @@ MonoBehaviour:
   defaultGravityScale: 0
   rigidbodyLinearDrag: 0
   rigidbodyAngularDrag: 0.15
+  enableSpeedLog: 0
   inputPlayer: {fileID: 6598805457405255479}
   uiJoystick: {fileID: 0}
   includePhysicalMoveInput: 1

@@ -2887,7 +2887,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::RcRaceLevelRoot
   carSpawn: {fileID: 3720819757804128363}
   finishTrigger: {fileID: 4001533209013334660}
-  levelOrthographicSize: 10
+  levelOrthographicSize: 17
   lapCount: 2
 --- !u!1 &5339854064550518232
 GameObject:
@@ -4982,19 +4982,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: -0.011129024
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.9999381
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -5006,7 +5006,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4697481629701369714, guid: 55b356b3df9b2934e9a129b14b706c5d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 181.275
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

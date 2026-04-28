@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,8 +7,10 @@ using UnityEngine.UI;
 /// </summary>
 public class RcCarRaceResultPanel : BasePanel
 {
-    [SerializeField] Component currentLine;
-    [SerializeField] Component bestLine;
+    [Tooltip("本次成绩时间文本：只填 mm:ss.xx 数字；前缀'本次成绩'放 prefab 旁边的静态 Text")]
+    [SerializeField] Text currentTimeLabel;
+    [Tooltip("最好成绩时间文本：只填 mm:ss.xx 数字；前缀'最好成绩'放 prefab 旁边的静态 Text")]
+    [SerializeField] Text bestTimeLabel;
     [Tooltip("破纪录时激活；非破纪录保持隐藏")]
     [SerializeField] GameObject newRecordIndicator;
     [SerializeField] Button playAgainButton;
@@ -22,21 +23,17 @@ public class RcCarRaceResultPanel : BasePanel
     [Tooltip("最好成绩对应的等级图标视图")]
     [SerializeField] RcRaceGradeIconView bestGradeView;
 
-    static Type _tmpUguiType;
-
-    static Type TmpUguiType
-    {
-        get
-        {
-            if (_tmpUguiType == null)
-            {
-                _tmpUguiType = Type.GetType("TMPro.TextMeshProUGUI, Unity.TextMeshPro");
-            }
-            return _tmpUguiType;
-        }
-    }
+    [Header("等级配色")]
+    [Tooltip("等级 → 字体颜色 的映射 SO；缺失时时间文本保留 prefab 设计时颜色")]
+    [SerializeField] RcRaceGradeStyleLibrary styleLibrary;
 
     RcCarRaceGameMode Mode => GameManager.Instance?.GetGameMode() as RcCarRaceGameMode;
+
+    // 染色前先缓存 prefab 设计时颜色，作为库未拖 / 库未配 / grade 为 None 时的回退色；染过一次后就读不到原色
+    Color _currentTimeDefaultColor = Color.white;
+    Color _bestTimeDefaultColor = Color.white;
+    bool _currentTimeColorCached;
+    bool _bestTimeColorCached;
 
     public override void OnEnter()
     {
@@ -53,8 +50,10 @@ public class RcCarRaceResultPanel : BasePanel
         if (mode != null)
         {
             var r = mode.LastRaceResult;
-            SetUIText(currentLine, "本次成绩： " + RcCarRaceSession2D.FormatTime(r.Total));
-            SetUIText(bestLine, "最好成绩： " + RcCarRaceSession2D.FormatTime(r.BestShown));
+            ApplyTimeLabel(currentTimeLabel, RcCarRaceSession2D.FormatTime(r.Total),
+                r.CurrentGrade, ref _currentTimeDefaultColor, ref _currentTimeColorCached);
+            ApplyTimeLabel(bestTimeLabel, RcCarRaceSession2D.FormatTime(r.BestShown),
+                r.BestGrade, ref _bestTimeDefaultColor, ref _bestTimeColorCached);
             if (newRecordIndicator != null)
             {
                 newRecordIndicator.SetActive(r.NewRecord);
@@ -62,6 +61,23 @@ public class RcCarRaceResultPanel : BasePanel
             if (currentGradeView != null) currentGradeView.SetGrade(r.CurrentGrade);
             if (bestGradeView != null) bestGradeView.SetGrade(r.BestGrade);
         }
+    }
+
+    void ApplyTimeLabel(Text label, string text, RcRaceGrade grade, ref Color defaultColor, ref bool cached)
+    {
+        if (label == null) return;
+
+        label.text = text;
+
+        if (!cached)
+        {
+            defaultColor = label.color;
+            cached = true;
+        }
+
+        label.color = styleLibrary != null
+            ? styleLibrary.GetTextColor(grade, defaultColor)
+            : defaultColor;
     }
 
     public override void OnExit()
@@ -102,43 +118,5 @@ public class RcCarRaceResultPanel : BasePanel
         // ExitRace 内部仅在 _pausedFromRace 时才会再 Pop，结算面板不在暂停态，不会重复出栈
         UIManager.GetInstance().PopPanel();
         Mode?.ExitRace();
-    }
-
-    static void SetUIText(Component c, string value)
-    {
-        if (c == null)
-        {
-            return;
-        }
-
-        if (c is Text leg)
-        {
-            leg.text = value;
-            return;
-        }
-
-        var go = c.gameObject;
-        var ugui = go.GetComponent<Text>() ?? go.GetComponentInChildren<Text>(true);
-        if (ugui != null)
-        {
-            ugui.text = value;
-            return;
-        }
-
-        var tmpType = TmpUguiType;
-        if (tmpType == null)
-        {
-            return;
-        }
-
-        var tmp = go.GetComponent(tmpType) ?? go.GetComponentInChildren(tmpType, true);
-        if (tmp != null)
-        {
-            tmpType.GetProperty("text")?.SetValue(tmp, value);
-        }
-        else if (tmpType.IsInstanceOfType(c))
-        {
-            tmpType.GetProperty("text")?.SetValue(c, value);
-        }
     }
 }

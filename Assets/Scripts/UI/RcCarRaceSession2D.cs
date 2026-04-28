@@ -22,6 +22,10 @@ public class RcCarRaceSession2D : MonoBehaviour
     [Header("圈数（正常流程动态赋值，在原场景测试可以直接改）")]
     [SerializeField, Range(1, 5)] int lapsPerRound = 3;
 
+    [Header("反作弊（临时方案，未来由赛道 checkpoint 取代）")]
+    [Tooltip("一圈最短允许时间（秒）；小于此值的过线视为无效，防玩家绕背面/起点反向越过线")]
+    [SerializeField] float minLapSeconds = 5f;
+
     Vector3 _spawnPosition;
     Quaternion _spawnRotation;
     float[] _lapTimes;
@@ -248,6 +252,12 @@ public class RcCarRaceSession2D : MonoBehaviour
 
         float now = Time.time;
         float dt = now - _lapStartTime;
+        // 圈太短直接当作没冲线：不更新 _lapStartTime、不动 _finishArmed，保持本圈继续计时。
+        // 用于挡掉「绕赛道背面冲线」「起点附近反向越线」等捷径。
+        if (dt < minLapSeconds)
+        {
+            return;
+        }
         dt = RoundToHundredths(dt);
         _lapStartTime = now;
 

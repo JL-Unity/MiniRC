@@ -94,6 +94,10 @@ public class RcCarController2D : MonoBehaviour
     [Tooltip("刚体角阻尼；过大会抵消脚本设置的角速度")]
     [SerializeField] float rigidbodyAngularDrag = 0.2f;
 
+    [Header("Debug")]
+    [Tooltip("每个 FixedUpdate 输出一次速度日志：基于位置差/dt 的实诚速度 + rb.linearVelocity 对照。仅调试用，验完请关；走 LogClass 仅 Editor 输出")]
+    [SerializeField] bool enableSpeedLog;
+
     [Header("Input")]
     [Tooltip("绑定 Input Actions 里 Player 的 Move / Sprint / Reverse")]
     [SerializeField] RcCarInputSystemPlayer inputPlayer;
@@ -112,6 +116,10 @@ public class RcCarController2D : MonoBehaviour
 
     // OnCollisionStay2D 在 FixedUpdate 之后由物理系统触发，所以这里存的是「上一个物理步的接触状态」，>0 视为贴墙中
     float _wallContactTimer;
+
+    // 速度日志用：上一 FixedUpdate 开头的 rb.position；本帧位移除以 dt 即"上一物理 Step 的真实位移速度"
+    Vector2 _prevPos;
+    bool _prevPosValid;
 
     void Reset()
     {
@@ -187,7 +195,38 @@ public class RcCarController2D : MonoBehaviour
         float steerFollow = Mathf.Abs(steerX) < 0.001f ? steerAngleReleaseSpeedDeg : steerAngleFollowSpeedDeg;
         _steerAngleDeg = Mathf.MoveTowards(_steerAngleDeg, targetSteerDeg, steerFollow * dt);
 
+        // 在 RunPhysics 之前打日志：此时 rb.linearVelocity 与 (rb.position - _prevPos)/dt 都是"上一 Step 后的产物"，口径一致便于对照
+        if (enableSpeedLog) LogSpeedFrame(throttle, dt);
+        // 缓存维护放在 if 之外：开关切换后下一帧也能立刻有正确的 _prevPos
+        _prevPos = rb.position;
+        _prevPosValid = true;
+
         RunPhysics(throttle, maxForwardSpeed, dt, steerX);
+    }
+
+    /// <summary>
+    /// 每物理步打一行速度数据。两组对照：
+    /// · posVel：基于 (rb.position - _prevPos)/dt——transform 实际位移的"实诚速度"，不受任何 velocity 赋值或排队 force 影响
+    /// · rb：直读 rb.linearVelocity，反映"上一 Step 后写入 Rigidbody 的速度"
+    /// 稳态两者应基本一致；明显偏离说明有 contact 解算或外部脚本干预 transform/velocity。
+    /// </summary>
+    void LogSpeedFrame(float throttle, float dt)
+    {
+        Vector2 fwd = transform.up;
+        Vector2 v = rb.linearVelocity;
+        float rbFwd = Vector2.Dot(v, fwd);
+
+        float posVelFwd = 0f;
+        float posVelMag = 0f;
+        if (_prevPosValid)
+        {
+            Vector2 disp = rb.position - _prevPos;
+            posVelFwd = Vector2.Dot(disp, fwd) / dt;
+            posVelMag = disp.magnitude / dt;
+        }
+
+        LogClass.LogGame(GameLogCategory.RcCar,
+            $"speed posVel.fwd={posVelFwd:F3} mag={posVelMag:F3} | rb.fwd={rbFwd:F3} mag={v.magnitude:F3} | cap={maxForwardSpeed:F2} accF={accelerationForce:F0} mass={rb.mass:F2} throttle={throttle:F1}");
     }
 
     /// <summary>
@@ -242,7 +281,26 @@ public class RcCarController2D : MonoBehaviour
         float forwardAfterDamp = Vector2.Dot(rb.linearVelocity, forward);
 
         float accelMul = throttle >= 0f ? 1f : reverseAcceRate;
-        rb.AddForce(forward * (throttle * accelerationForce * accelMul));
+        float driveForce = throttle * accelerationForce * accelMul;
+        if (Mathf.Abs(driveForce) > 0f)
+        {
+            // 预算式施力：物理 Step 会把 driveForce 转成 Δv = F·dt/m 加到 linearVelocity 上。
+            // 施力前算"沿车头还能涨多少 Δv 不超 cap"，按比例把 driveForce 缩到余量内；
+            float mass = Mathf.Max(1e-4f, rb.mass);
+            float wantedDeltaV = driveForce * dt / mass;
+            bool sameDir = (throttle > 0f && forwardAfterDamp >= 0f)
+                        || (throttle < 0f && forwardAfterDamp <= 0f);
+            if (sameDir)
+            {
+                float cap = throttle >= 0f ? forwardSpeedCap : maxReverseSpeed;
+                float headroom = Mathf.Max(0f, cap - Mathf.Abs(forwardAfterDamp));
+                if (Mathf.Abs(wantedDeltaV) > headroom)
+                {
+                    driveForce *= headroom / Mathf.Abs(wantedDeltaV);
+                }
+            }
+            rb.AddForce(forward * driveForce);
+        }
 
         // 油门与当前车头速度反向：额外刹车感
         if (Mathf.Abs(throttle) > 0.01f)
@@ -278,6 +336,7 @@ public class RcCarController2D : MonoBehaviour
         }
         float yaw = Mathf.Lerp(rb.angularVelocity, desiredYawDegPerSec, t);
         rb.angularVelocity = Mathf.Clamp(yaw, -maxYawRateDeg, maxYawRateDeg);
+
     }
 
     /// <summary>
