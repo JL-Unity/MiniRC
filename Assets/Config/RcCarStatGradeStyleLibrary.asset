@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a1e52d22e5676fc44ab7a16ab8fccac0, type: 3}
+  m_Name: RcCarStatGradeStyleLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::RcCarStatGradeStyleLibrary
+  c:
+    textColor: {r: 0.34725875, g: 0.7264151, b: 0.11307406, a: 1}
+    textColorToken: 1
+    minPercent: 0
+  cPlus:
+    textColor: {r: 0.3820755, g: 1, b: 0.61033213, a: 1}
+    textColorToken: 2
+    minPercent: 44
+  b:
+    textColor: {r: 0.25490198, g: 0.8156863, b: 1, a: 1}
+    textColorToken: 3
+    minPercent: 54
+  bPlus:
+    textColor: {r: 0.254902, g: 0.27659887, b: 1, a: 1}
+    textColorToken: 4
+    minPercent: 64
+  a:
+    textColor: {r: 0.8627451, g: 0.50980395, b: 1, a: 1}
+    textColorToken: 5
+    minPercent: 69
+  aPlus:
+    textColor: {r: 1, g: 0.50980395, b: 0.70459914, a: 1}
+    textColorToken: 6
+    minPercent: 74
+  s:
+    textColor: {r: 1, g: 0.70980394, b: 0, a: 1}
+    textColorToken: 7
+    minPercent: 79
+  sPlus:
+    textColor: {r: 1, g: 0, b: 0, a: 1}
+    textColorToken: 8
+    minPercent: 89

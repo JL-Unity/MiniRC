@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f82766e102a6814a963f8fc95416f3a, type: 3}
   m_Name: RcCar_Tank300
   m_EditorClassIdentifier: Assembly-CSharp::RcCarDefinition
-  carId: 003
+  carId: 002
   displayName: "\u4E0A\u5355300"
   previewSprite: {fileID: -3933903695215632743, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
   carPrefab: {fileID: 8431796612363434756, guid: f4103b1131901ef48bc12deb4cb25181, type: 3}

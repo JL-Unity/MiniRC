@@ -9,6 +9,8 @@ public class RcCarDefinition : ScriptableObject
     [Tooltip("逻辑 id，可选")]
     public string carId;
 
+    public Difficulty difficulty;
+
     public string displayName = "RC";
 
     [Tooltip("选车界面展示用图片（可选，与属性条贴图无关）")]

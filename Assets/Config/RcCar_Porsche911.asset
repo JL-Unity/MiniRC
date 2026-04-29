@@ -12,10 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2f82766e102a6814a963f8fc95416f3a, type: 3}
   m_Name: RcCar_Porsche911
   m_EditorClassIdentifier: Assembly-CSharp::RcCarDefinition
-  carId: 002
+  carId: 003
+  difficulty: 2
   displayName: "\u5B9D\u77F3\u6377911"
   previewSprite: {fileID: 726954775393252459, guid: d80f9e4e8d996be4298e86a77ba0e25c, type: 3}
   carPrefab: {fileID: 1259200668921026307, guid: 89c183e23f7c0d143a3c5fccd20a29e3, type: 3}
-  speedPercent: 80
+  speedPercent: 85
   accelPercent: 60
   gripPercent: 40

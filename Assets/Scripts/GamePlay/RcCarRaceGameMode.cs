@@ -168,8 +168,34 @@ public class RcCarRaceGameMode : GameMode
                 }
             }
 
+            BindMidCheckpoints(root, rb.transform);
+
             ApplyLevelOrthographicSize(root);
         }
+    }
+
+    /// <summary>绑定关卡里的所有反作弊 checkpoint，并告诉 Session 期望集齐多少个。</summary>
+    void BindMidCheckpoints(RcRaceLevelRoot root, Transform carTransform)
+    {
+        var checkpoints = root.GetMidCheckpointsInLevel();
+        int validCount = 0;
+        var seenIds = new System.Collections.Generic.HashSet<int>();
+        foreach (var cp in checkpoints)
+        {
+            if (cp == null)
+            {
+                continue;
+            }
+            if (!seenIds.Add(cp.CheckpointId))
+            {
+                LogClass.LogWarning(GameLogCategory.System,
+                    $"RcCarRaceGameMode: duplicate checkpointId {cp.CheckpointId} on '{cp.name}', ignored");
+                continue;
+            }
+            cp.BindSessionAndCar(raceSession, carTransform);
+            validCount++;
+        }
+        raceSession.SetExpectedCheckpointCount(validCount);
     }
 
     void ApplyLevelOrthographicSize(RcRaceLevelRoot root)

@@ -58,4 +58,10 @@ public class RcRaceLevelRoot : MonoBehaviour
     {
         return GetComponentsInChildren<RcCarFinishLine2D>(true);
     }
+
+    /// <summary>关卡里所有反作弊中段检查点（无序）；用于 Session 圈完成守卫。</summary>
+    public RcCarMidCheckpoint2D[] GetMidCheckpointsInLevel()
+    {
+        return GetComponentsInChildren<RcCarMidCheckpoint2D>(true);
+    }
 }

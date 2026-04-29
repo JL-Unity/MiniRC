@@ -156,6 +156,7 @@ public class GameManager : MonoBehaviour
         SkillManager.GetInstance().Init();
         AudioManager.GetInstance().Init();
         AudioManager.GetInstance().Configure(audioMixer, bgmSource, sfxSource);
+        UiColorService.GetInstance().Init();
     }
 
     public GameMode GetGameMode()

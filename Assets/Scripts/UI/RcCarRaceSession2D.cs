@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
@@ -22,13 +23,14 @@ public class RcCarRaceSession2D : MonoBehaviour
     [Header("圈数（正常流程动态赋值，在原场景测试可以直接改）")]
     [SerializeField, Range(1, 5)] int lapsPerRound = 3;
 
-    [Header("反作弊（临时方案，未来由赛道 checkpoint 取代）")]
-    [Tooltip("一圈最短允许时间（秒）；小于此值的过线视为无效，防玩家绕背面/起点反向越过线")]
-    [SerializeField] float minLapSeconds = 5f;
-
     Vector3 _spawnPosition;
     Quaternion _spawnRotation;
     float[] _lapTimes;
+
+    // 反作弊：本圈内必须集齐所有中段 checkpoint 的 id 才允许过终点计圈；过终点后清空。
+    // _expectedCheckpointCount 由 GameMode 在绑定关卡后写入；为 0 时退化为「只看终点线」（兼容无 checkpoint 的关卡）。
+    readonly HashSet<int> _touchedCheckpoints = new HashSet<int>();
+    int _expectedCheckpointCount;
 
     public enum SessionState
     {
@@ -157,6 +159,8 @@ public class RcCarRaceSession2D : MonoBehaviour
             _finishArmed = true;
         }
 
+        _touchedCheckpoints.Clear();
+
         EventCenter.GetInstance().Publish(new RaceStartedMessage());
     }
 
@@ -211,6 +215,7 @@ public class RcCarRaceSession2D : MonoBehaviour
         _state = SessionState.WaitingFirstInput;
         _lapsCompleted = 0;
         _finishArmed = false;
+        _touchedCheckpoints.Clear();
         for (int i = 0; i < _lapTimes.Length; i++)
         {
             _lapTimes[i] = 0f;
@@ -228,6 +233,31 @@ public class RcCarRaceSession2D : MonoBehaviour
     public void SetFinishTrigger(Collider2D trigger)
     {
         finishTrigger = trigger;
+    }
+
+    /// <summary>由 GameMode 在绑定关卡 checkpoint 后写入；0 表示该关无中段 checkpoint，反作弊守卫退化为不检查。</summary>
+    public void SetExpectedCheckpointCount(int count)
+    {
+        _expectedCheckpointCount = Mathf.Max(0, count);
+        _touchedCheckpoints.Clear();
+    }
+
+    /// <summary>由 <see cref="RcCarMidCheckpoint2D"/> 在玩家车辆触发时调用；HashSet 自带去重。</summary>
+    public void NotifyMidpointTouched(int checkpointId)
+    {
+        if (!_playerBound)
+        {
+            return;
+        }
+        if (_state != SessionState.Racing)
+        {
+            return;
+        }
+        if (IsGameplayPaused())
+        {
+            return;
+        }
+        _touchedCheckpoints.Add(checkpointId);
     }
 
     /// <summary>由终点 <see cref="RcCarFinishLine2D"/> 在玩家车辆进入时调用。</summary>
@@ -249,16 +279,15 @@ public class RcCarRaceSession2D : MonoBehaviour
         {
             return;
         }
-
-        float now = Time.time;
-        float dt = now - _lapStartTime;
-        // 圈太短直接当作没冲线：不更新 _lapStartTime、不动 _finishArmed，保持本圈继续计时。
-        // 用于挡掉「绕赛道背面冲线」「起点附近反向越线」等捷径。
-        if (dt < minLapSeconds)
+        // 反作弊：本圈集齐所有中段 checkpoint 才算合法过线；否则当作没冲线，不动 _finishArmed/_lapStartTime。
+        // _expectedCheckpointCount = 0 时（关卡未配置 checkpoint）该判定恒成立，行为退化为「只看终点线」。
+        if (_touchedCheckpoints.Count < _expectedCheckpointCount)
         {
             return;
         }
-        dt = RoundToHundredths(dt);
+
+        float now = Time.time;
+        float dt = RoundToHundredths(now - _lapStartTime);
         _lapStartTime = now;
 
         int lapIndex = _lapsCompleted;
@@ -268,6 +297,7 @@ public class RcCarRaceSession2D : MonoBehaviour
         }
         _lapsCompleted++;
         _finishArmed = false;
+        _touchedCheckpoints.Clear();
 
         EventCenter.GetInstance().Publish(new RaceLapCompletedMessage(lapIndex, dt));
 
@@ -334,6 +364,7 @@ public class RcCarRaceSession2D : MonoBehaviour
         _state = SessionState.WaitingFirstInput;
         _lapsCompleted = 0;
         _finishArmed = false;
+        _touchedCheckpoints.Clear();
         for (int i = 0; i < _lapTimes.Length; i++)
         {
             _lapTimes[i] = 0f;
