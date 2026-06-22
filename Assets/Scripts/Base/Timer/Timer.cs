@@ -29,42 +29,72 @@ public class Timer
     
     public bool IsPaused;
 
-    float _pausedTime; //中途暂停计时
-    float _totalPausedDuration; //偏差时间，目的是暂停之后能重新计时
-    float _startTime; //开始计时间
-    float _timeNow;//当前时间
+    float _pausedTime; //进入暂停那一刻的 Time.time，Resume 时据此累加暂停时长
+    float _totalPausedDuration; //累计暂停时长，从经过时间里扣除，使暂停不计入计时
+    float _startTime; //本轮开始计时刻（Time.time）
+
+    // 有限循环全部完成、且不自动销毁时置 true：停止再触发，保留对象等待外部 Reset()
+    bool _isCompleted;
 
     public bool IsEnd { get; private set; }
     //已经经过的时间
     public float Elapsed;
     public float Progress => Mathf.Clamp01(Elapsed / _duration);
     
-    float now;
     public void Update()
     {
-        if (IsEnd || IsPaused)
+        if (IsEnd || IsPaused || _isCompleted)
         {
             return;
         }
-        
-        Elapsed = IsPaused ? _pausedTime - _startTime - _totalPausedDuration 
-            : Time.time - _startTime - _totalPausedDuration;
-        
-        if (Elapsed >= _duration)
+
+        Elapsed = Time.time - _startTime - _totalPausedDuration;
+
+        if (Elapsed < _duration)
         {
-            if (_loopTimes > 0 || _isInfiniteLoop)
-            {
-                _startTime += _duration;
-                _loopTimes--;
-            }
-            IsEnd = !_isInfiniteLoop && (_loopTimes == 0 && _isAutoDestory);
+            _UpdateEvent?.Invoke(Progress);
+            return;
+        }
+
+        // 到达一个周期。无限循环：推进起点后持续触发，不涉及次数与销毁
+        if (_isInfiniteLoop)
+        {
+            _startTime += _duration;
             _OnCompleted?.Invoke();
             return;
         }
-        _UpdateEvent?.Invoke(Progress);
+
+        // 有限循环：消耗一次次数并回调
+        _loopTimes--;
+        _OnCompleted?.Invoke();
+
+        if (_loopTimes > 0)
+        {
+            // 还有剩余周期，推进起点继续计时
+            _startTime += _duration;
+            return;
+        }
+
+        // 全部周期完成：自动销毁交给 TimerManager 移除；否则停在完成态等待 Reset()
+        if (_isAutoDestory)
+        {
+            IsEnd = true;
+        }
+        else
+        {
+            _isCompleted = true;
+        }
     }
     
-    public void Pause() => IsPaused = true;
+    public void Pause()
+    {
+        if (IsPaused)
+        {
+            return;
+        }
+        _pausedTime = Time.time;
+        IsPaused = true;
+    }
 
     public void Resume()
     {
@@ -82,6 +112,8 @@ public class Timer
     {
         _startTime = Time.time;
         _totalPausedDuration = 0;
+        Elapsed = 0;
         IsPaused = false;
+        _isCompleted = false;
     }
 }

@@ -6,8 +6,6 @@ using UnityEngine.SceneManagement;
 
 public class GameManager : MonoBehaviour
 {
-    private bool isGameStop = false;
-
     public static GameManager Instance;
 
     private GameMode currentGameMode;
@@ -123,6 +121,9 @@ public class GameManager : MonoBehaviour
 
         if (!string.IsNullOrEmpty(asset.sceneName))
         {
+            // 直连兜底路径不走 SceneStateAsset.ExitState，需在此处补一次清理：
+            // 旧场景对象此刻仍存活，先清 UI 栈 / 对象池 / 场景级事件订阅，避免切场景后触到 fake-null。
+            Clear();
             SceneManager.LoadScene(asset.sceneName);
         }
     }
@@ -166,10 +167,7 @@ public class GameManager : MonoBehaviour
 
     void Update()
     {
-        if (isGameStop)
-        {
-            return;
-        }
+        // 暂停时计时由 Time.timeScale=0 让 Time.time 自然冻结（Timer 基于 Time.time），无需在此额外 gate
         TimerManager.GetInstance().Update();
     }
 

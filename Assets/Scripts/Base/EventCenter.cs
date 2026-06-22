@@ -83,9 +83,22 @@ public class EventCenter : BaseManager<EventCenter>
             return;
         }
 
-        if (del is Action<T> action)
+        // 逐个订阅者派发并隔离异常：某个 handler 抛出不应中断后续订阅者。
+        // GetInvocationList 返回的是不可变快照，handler 内即便增删订阅也不影响本次遍历。
+        var invocationList = del.GetInvocationList();
+        for (int i = 0; i < invocationList.Length; i++)
         {
-            action.Invoke(message);
+            if (invocationList[i] is Action<T> action)
+            {
+                try
+                {
+                    action.Invoke(message);
+                }
+                catch (Exception e)
+                {
+                    LogClass.LogError(GameLogCategory.System, $"EventCenter: 订阅者处理 {type.Name} 时抛出异常：{e}");
+                }
+            }
         }
     }
 

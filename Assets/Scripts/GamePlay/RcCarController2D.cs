@@ -72,7 +72,7 @@ public class RcCarController2D : MonoBehaviour
 
     [Header("Inertia · 纵向滑行")]
     [Tooltip("乘在 forwardDrag 与 coastExtraDrag 上：<1 纵向衰减慢、松油后更耐滑；>1 更快停。不改侧向抓地")]
-    [SerializeField] [Range(0.25f, 1.35f)] float longitudinalDragScale = 0.82f;
+    [SerializeField][Range(0.25f, 1.35f)] float longitudinalDragScale = 0.82f;
 
     [Header("Collision · 贴墙补丁（抑制撞墙后沿墙滑）")]
     [Tooltip("OnCollisionStay 刷新后保持多少秒「贴墙态」；过期自动失效，无需依赖 Exit 事件配对")]
@@ -94,7 +94,7 @@ public class RcCarController2D : MonoBehaviour
     [Tooltip("刚体角阻尼；过大会抵消脚本设置的角速度")]
     [SerializeField] float rigidbodyAngularDrag = 0.2f;
 
-    [Header("Input") ]
+    [Header("Input")]
     [Tooltip("绑定 Input Actions 里 Player 的 Move / Sprint / Reverse")]
     [SerializeField] RcCarInputSystemPlayer inputPlayer;
     [Tooltip("Joystick Pack 屏幕摇杆；Horizontal 并进横向")]

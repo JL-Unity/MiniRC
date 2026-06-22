@@ -22,13 +22,8 @@ public class UIManager : BaseManager<UIManager>
 
     private Transform ResolveCanvasRoot()
     {
-        // 场景切换后旧 Canvas 会被销毁，Unity 的 == null 能识别 fake-null；此时返回 null 让调用方打 warning
-        if (_canvasRoot == null)
-        {
-            _canvasRoot = null;
-            return null;
-        }
-        return _canvasRoot;
+        // 场景切换后旧 Canvas 被销毁，Unity 的 == null 能识别 fake-null；直接返回（fake-null 时即 null），让调用方打 warning 兜底
+        return _canvasRoot == null ? null : _canvasRoot;
     }
 
     public Transform CanvasTransform => ResolveCanvasRoot();

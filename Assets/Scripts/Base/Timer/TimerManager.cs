@@ -42,7 +42,6 @@ public class TimerManager : BaseManager<TimerManager>
         {
             timer.IsPaused = true;
             timers.Remove(timer);
-            timer = null;
         }
     }
 }

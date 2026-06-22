@@ -20,7 +20,6 @@ public class PoolManager : BaseManager<PoolManager>
         {
             //LogClass.LogGame(GameLogCategory.System, "Find item" + name);
             obj = poolDic[name][0];
-            obj.transform.position = location;
             poolDic[name].RemoveAt(0);
         }
         else
@@ -32,7 +31,15 @@ public class PoolManager : BaseManager<PoolManager>
                 //LogClass.LogGame(GameLogCategory.System, "Create item" + name);
             }
         }
+        // 资源路径错误 / 资源不在 Resources 下，或池里残留的对象已被销毁（fake-null）：返回 null 让上层降级，不再无脑 SetActive 触发 NRE
+        if (obj == null)
+        {
+            LogClass.LogWarning(GameLogCategory.System, "PoolManager.GetObject: 取对象失败，path=" + name);
+            return null;
+        }
+        obj.transform.position = location;
         obj.SetActive(true);
+        NotifySpawn(obj);
         return obj;
     }
     
@@ -43,7 +50,6 @@ public class PoolManager : BaseManager<PoolManager>
         {
             //LogClass.LogGame(GameLogCategory.System, "Find item" + name);
             obj = poolDic[name][0];
-            obj.transform.position = location;
             poolDic[name].RemoveAt(0);
         }
         else
@@ -55,7 +61,14 @@ public class PoolManager : BaseManager<PoolManager>
                 //LogClass.LogGame(GameLogCategory.System, "Create item" + name);
             }
         }
+        if (obj == null)
+        {
+            LogClass.LogWarning(GameLogCategory.System, "PoolManager.GetObject: 取对象失败，path=" + name);
+            return null;
+        }
+        obj.transform.SetPositionAndRotation(location, rotation);
         obj.SetActive(true);
+        NotifySpawn(obj);
         return obj;
     }
     
@@ -74,14 +87,34 @@ public class PoolManager : BaseManager<PoolManager>
         }
         else
         {
-            obj = GameObject.Instantiate(Resources.Load<GameObject>(name), parentTransfrom, false);
+            GameObject prefab = Resources.Load<GameObject>(name);
+            if (prefab != null)
+            {
+                obj = GameObject.Instantiate(prefab, parentTransfrom, false);
+            }
             //LogClass.LogGame(GameLogCategory.System, name);
         }
+        // 面板预制体路径错误，或池里残留对象已随旧 Canvas 销毁：返回 null 让 UIManager 打 warning 兜底
+        if (obj == null)
+        {
+            LogClass.LogWarning(GameLogCategory.UIManager, "PoolManager.GetUIObject: 取对象失败，path=" + name);
+            return null;
+        }
         obj.SetActive(true);
+        NotifySpawn(obj);
         return obj;
     }
     public void PushObj(string name, GameObject obj)
     {
+        if (obj == null)
+        {
+            return;
+        }
+        // 回收前给业务一个清理状态的机会（清订阅/协程/速度等），再失活入池
+        if (obj.TryGetComponent<PoolObject>(out var poolObject))
+        {
+            poolObject.OnRecycleToPool();
+        }
         obj.SetActive(false);
         if (poolDic.ContainsKey(name))
         {
@@ -92,6 +125,15 @@ public class PoolManager : BaseManager<PoolManager>
             poolDic.Add(name, new List<GameObject>() { obj });
         }
     }
+    /// <summary>取出复用后通知业务重置状态（挂了 PoolObject 才有钩子）。</summary>
+    private static void NotifySpawn(GameObject obj)
+    {
+        if (obj.TryGetComponent<PoolObject>(out var poolObject))
+        {
+            poolObject.OnSpawnFromPool();
+        }
+    }
+
     /// <summary>
     /// 场景切换时调用
     /// </summary>

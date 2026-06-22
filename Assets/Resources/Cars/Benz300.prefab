@@ -15,6 +15,7 @@ GameObject:
   - component: {fileID: 8564878474351681871}
   - component: {fileID: 3783149641369716862}
   - component: {fileID: 4988711626040474836}
+  - component: {fileID: -3634609097126783844}
   m_Layer: 0
   m_Name: Benz300
   m_TagString: Untagged
@@ -148,7 +149,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 107269714000765684}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a148df7187e6a0140adbc4c8179286cd, type: 3}
   m_Name: 
@@ -182,7 +183,6 @@ MonoBehaviour:
   defaultGravityScale: 0
   rigidbodyLinearDrag: 0
   rigidbodyAngularDrag: 0.15
-  enableSpeedLog: 0
   inputPlayer: {fileID: 6308455966588501232}
   uiJoystick: {fileID: 0}
   includePhysicalMoveInput: 1
@@ -244,6 +244,45 @@ MonoBehaviour:
   minSpeedToEmit: 1
   minPointDistance: 0.08
   maxPointsPerSegment: 200
+--- !u!114 &-3634609097126783844
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 107269714000765684}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3acb9c780fb88d48a77856feffb82dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RcCarControllerAdvanced
+  rb: {fileID: 0}
+  inputPlayer: {fileID: 0}
+  accelerationForce: 24
+  maxForwardSpeed: 8.1
+  maxReverseSpeed: 4
+  reverseAccelerationRate: 0.55
+  forwardDrag: 2
+  coastExtraDrag: 0.55
+  lateralGripStraight: 3
+  lateralGripTurning: 1.2
+  maxYawRate: 550
+  steerResponse: 16
+  releaseResponse: 28
+  driftEnergyBuild: 1.4
+  driftEnergyDecay: 0.9
+  maxDriftEnergy: 1
+  driftGripLoss: 0.9
+  driftYawBoost: 45
+  counterSteerBoost: 85
+  smoothBonusGain: 1.6
+  smoothBonusDecay: 2.8
+  smoothGripBonus: 0.55
+  gripSnapBoost: 0.8
+  oversteerThreshold: 6.5
+  oversteerPunish: 0.9
+  driftEnergy: 0
+  smoothChain: 0
 --- !u!1 &1310908831127528329
 GameObject:
   m_ObjectHideFlags: 0
